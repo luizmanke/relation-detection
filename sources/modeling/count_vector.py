@@ -9,11 +9,10 @@ class CountVector(BaseClassifier):
     def __init__(self, **kwargs):
         BaseClassifier.__init__(self, **kwargs)
 
-    def fit(self, samples: List[dict]) -> None:
+    def fit(self, samples: List[dict], y: np.ndarray) -> None:
         sentences = self._get_middle_sentences(samples)
         self._vectorizer_fit(sentences)
         x = self._vectorizer_transform(sentences)
-        y = self._get_targets(samples)
         BaseClassifier.fit(self, x, y)
 
     def predict(self, samples: List[dict]) -> np.ndarray:
@@ -28,10 +27,6 @@ class CountVector(BaseClassifier):
             middle_tokens = sample["tokens"][sample['index_1']+1:sample['index_2']]
             middle_sentences.append(" ".join(middle_tokens))
         return middle_sentences
-
-    @staticmethod
-    def _get_targets(samples: List[dict]) -> np.ndarray:
-        return np.array([sample["relation"] for sample in samples])
 
     def _vectorizer_fit(self, sentences: List[str]) -> None:
         self.vectorizer = CountVectorizer()

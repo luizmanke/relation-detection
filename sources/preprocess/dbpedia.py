@@ -1,7 +1,7 @@
 import numpy as np
 import re
 from imblearn.under_sampling import RandomUnderSampler
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 
 class DBpedia:
@@ -9,14 +9,14 @@ class DBpedia:
     def __init__(self, file_name: str):
         self.file_name = file_name
 
-    def get_samples(self) -> List[dict]:
+    def get_data(self) -> List[dict]:
         self._load_text()
         self._extract_sentences()
         self._span_entities()
         self._tokenize()
         self._mark_entities()
         self._rename_relations()
-        return self._get_samples()
+        return self._get_data()
 
     def _load_text(self) -> None:
         with open(self.file_name, "r") as text_file:
@@ -111,7 +111,7 @@ class DBpedia:
         for sample in self.samples:
             sample["relation"] = 0 if sample["REL TYPE"] == "other" else 1
 
-    def _get_samples(self) -> List[dict]:
+    def _get_data(self) -> Tuple[List[dict], np.ndarray]:
         samples = [sample for sample in self.samples if "tokens" in sample]
 
         # resample
@@ -127,5 +127,6 @@ class DBpedia:
                 key: value for key, value in samples[i].items() if key in KEYS
             } for i in new_indexes
         ]
+        selected_y = np.array([sample.pop("relation") for sample in selected_samples])
 
-        return selected_samples
+        return selected_samples, selected_y
