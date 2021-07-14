@@ -9,7 +9,7 @@ class DBpedia:
     def __init__(self, file_name: str):
         self.file_name = file_name
 
-    def get_data(self) -> List[dict]:
+    def get_data(self) -> Tuple[List[dict], np.ndarray]:
         self._load_text()
         self._extract_sentences()
         self._span_entities()
