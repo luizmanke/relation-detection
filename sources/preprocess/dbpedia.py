@@ -1,8 +1,7 @@
 import numpy as np
-import pandas as pd
 import re
 from imblearn.under_sampling import RandomUnderSampler
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 
 class DBpedia:
@@ -10,14 +9,14 @@ class DBpedia:
     def __init__(self, file_name: str):
         self.file_name = file_name
 
-    def get_samples(self) -> pd.DataFrame:
+    def get_samples(self) -> List[dict]:
         self._load_text()
         self._extract_sentences()
         self._span_entities()
         self._tokenize()
         self._mark_entities()
         self._rename_relations()
-        return self._get_dataframe()
+        return self._get_samples()
 
     def _load_text(self) -> None:
         with open(self.file_name, "r") as text_file:
@@ -112,15 +111,21 @@ class DBpedia:
         for sample in self.samples:
             sample["relation"] = 0 if sample["REL TYPE"] == "other" else 1
 
-    def _get_dataframe(self) -> pd.DataFrame:
+    def _get_samples(self) -> List[dict]:
         samples = [sample for sample in self.samples if "tokens" in sample]
 
         # resample
         labels = np.array([sample["relation"] for sample in samples]).reshape(-1, 1)
         indexes = np.array([i for i, _ in enumerate(labels)]).reshape(-1, 1)
-        new_indexes, _ = RandomUnderSampler().fit_resample(indexes, labels)
+        new_indexes, _ = RandomUnderSampler(random_state=42).fit_resample(indexes, labels)
+        new_indexes = sorted(new_indexes[:, 0])
 
-        # create dataframe
-        COLUMNS = ["tokens", "index_1", "index_2", "relation"]
-        df = pd.DataFrame(samples).astype({"index_1": int, "index_2": int})
-        return df.loc[new_indexes[:, 0], COLUMNS]
+        # select samples
+        KEYS = ["tokens", "index_1", "index_2", "relation"]
+        selected_samples = [
+            {
+                key: value for key, value in samples[i].items() if key in KEYS
+            } for i in new_indexes
+        ]
+
+        return selected_samples
