@@ -1,5 +1,6 @@
 from . import utils
 from argparse import Namespace
+from datetime import datetime
 
 
 def run(args: Namespace) -> None:
@@ -11,8 +12,12 @@ def run(args: Namespace) -> None:
     samples_train, _, y_train, _ = utils.train_test_split(samples, y)
 
     # train model
+    start_time = datetime.now()
     model = utils.MODELS[args.model_name]
     model.fit(samples_train, y_train)
+    elapsed_time = datetime.now() - start_time
+    if not args.quiet:
+        print(f"\n## Training time: {elapsed_time}")
 
     # evaluate
     y_pred_train = model.predict(samples_train)
