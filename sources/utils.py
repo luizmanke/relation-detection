@@ -7,6 +7,7 @@ from sklearn import metrics
 from sklearn.model_selection import train_test_split as tt_split
 from typing import Any, Tuple
 from .modeling.count_vector import CountVector
+from .modeling.prefix_middle_suffix import PrefixMiddleSuffix
 from .preprocess.dbpedia import DBpedia
 
 
@@ -14,7 +15,8 @@ DATASETS = {
     "dbpedia": DBpedia("data/DBpediaRelations-PT-0.2.txt")
 }
 MODELS = {
-    "count_vector": CountVector()
+    "count_vector": CountVector(),
+    "prefix_middle_suffix": PrefixMiddleSuffix()
 }
 RESULTS_DIR = "results"
 

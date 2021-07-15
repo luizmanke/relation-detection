@@ -1,12 +1,13 @@
 import numpy as np
-from .base_classifier import BaseClassifier
-from sklearn.feature_extraction.text import CountVectorizer
 from typing import List
+from .base_classifier import BaseClassifier
+from .base_vectorizer import BaseVectorizer
 
 
-class CountVector(BaseClassifier):
+class CountVector(BaseVectorizer, BaseClassifier):
 
     def __init__(self, **kwargs):
+        BaseVectorizer.__init__(self, vectorizer_name="count")
         BaseClassifier.__init__(self, **kwargs)
 
     def fit(self, samples: List[dict], y: np.ndarray) -> None:
@@ -29,8 +30,7 @@ class CountVector(BaseClassifier):
         return middle_sentences
 
     def _vectorizer_fit(self, sentences: List[str]) -> None:
-        self.vectorizer = CountVectorizer()
-        self.vectorizer.fit(sentences)
+        BaseVectorizer.fit(self, sentences)
 
-    def _vectorizer_transform(self, sentences: List[str]):
-        return self.vectorizer.transform(sentences).toarray()
+    def _vectorizer_transform(self, sentences: List[str]) -> np.ndarray:
+        return BaseVectorizer.transform(self, sentences)
