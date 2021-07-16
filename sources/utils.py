@@ -21,8 +21,6 @@ MODELS = {
     "prefix_middle_suffix": PrefixMiddleSuffix()
 }
 RESULTS_DIR = "results"
-if not os.path.isdir(RESULTS_DIR):
-    os.mkdir(RESULTS_DIR)
 
 
 def get_args() -> argparse.Namespace:
@@ -59,22 +57,28 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray) -> pd.Series:
     }])
 
 
-def save_model(model_name: str) -> None:
-    dir = f"{RESULTS_DIR}/{model_name}"
+def save_model(dataset_name: str, model_name: str) -> None:
+    dir = f"{RESULTS_DIR}/{dataset_name}/{model_name}"
     if not os.path.isdir(dir):
-        os.mkdir(dir)
+        os.makedirs(dir)
     with open(f"{dir}/model.pickle", "wb") as file:
         pickle.dump(MODELS[model_name], file)
 
 
-def load_model(model_name: str):
-    with open(f"{RESULTS_DIR}/{model_name}/model.pickle", "rb") as file:
+def load_model(dataset_name: str, model_name: str):
+    dir = f"{RESULTS_DIR}/{dataset_name}/{model_name}"
+    with open(f"{dir}/model.pickle", "rb") as file:
         model = pickle.load(file)
     return model
 
 
-def save_scores(df_scores: pd.DataFrame, model_name: str, source: str) -> None:
-    dir = f"{RESULTS_DIR}/{model_name}"
+def save_scores(
+        df_scores: pd.DataFrame,
+        dataset_name: str,
+        model_name: str,
+        source: str
+) -> None:
+    dir = f"{RESULTS_DIR}/{dataset_name}/{model_name}"
     if not os.path.isdir(dir):
-        os.mkdir(dir)
+        os.makedirs(dir)
     df_scores.to_csv(f"{dir}/scores_{source}.csv")

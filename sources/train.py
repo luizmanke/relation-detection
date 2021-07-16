@@ -27,8 +27,8 @@ def run(args: Namespace) -> None:
         print(df_scores)
 
     # save results
-    utils.save_model(args.model_name)
-    utils.save_scores(df_scores, args.model_name, "train")
+    utils.save_model(args.dataset_name, args.model_name)
+    utils.save_scores(df_scores, args.dataset_name, args.model_name, "train")
 
 
 if __name__ == "__main__":

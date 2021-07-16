@@ -11,7 +11,7 @@ def run(args: Namespace) -> None:
     _, samples_test, _, y_test = utils.train_test_split(samples, y)
 
     # load model
-    model = utils.load_model(args.model_name)
+    model = utils.load_model(args.dataset_name, args.model_name)
 
     # evaluate
     y_pred_test = model.predict(samples_test)
@@ -21,7 +21,7 @@ def run(args: Namespace) -> None:
         print(df_scores)
 
     # save results
-    utils.save_scores(df_scores, args.model_name, "test")
+    utils.save_scores(df_scores, args.dataset_name, args.model_name, "test")
 
 
 if __name__ == "__main__":
