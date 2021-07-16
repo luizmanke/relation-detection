@@ -13,7 +13,7 @@ from .preprocess.dbpedia import DBpedia
 
 
 DATASETS = {
-    "dbpedia": DBpedia("data/DBpediaRelations-PT-0.2 copy.txt")
+    "dbpedia": DBpedia("data/DBpediaRelations-PT-0.2.txt")
 }
 MODELS = {
     "bert": BERT(),
@@ -21,6 +21,8 @@ MODELS = {
     "prefix_middle_suffix": PrefixMiddleSuffix()
 }
 RESULTS_DIR = "results"
+if not os.path.isdir(RESULTS_DIR):
+    os.mkdir(RESULTS_DIR)
 
 
 def get_args() -> argparse.Namespace:

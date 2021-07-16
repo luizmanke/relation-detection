@@ -1,14 +1,15 @@
 from transformers import AutoTokenizer
+from typing import List
 
 
 class BaseTokenizer:
 
-    def __init__(self, transformer_name):
+    def __init__(self, transformer_name: str) -> None:
         self.tokenizer = AutoTokenizer.from_pretrained(transformer_name)
         self.tokenizer.add_tokens(['[E1]', '[/E1]', '[E2]', '[/E2]'])
-        self.max_sequence_length = 256
+        self.max_sequence_length = 512
 
-    def transform(self, samples):
+    def transform(self, samples: List[dict]) -> List[dict]:
         new_samples = []
         for sample in samples:
             new_sample = self._tokenize(
@@ -19,8 +20,8 @@ class BaseTokenizer:
             new_samples.append(new_sample)
         return new_samples
 
-    def _tokenize(self, words, index_1, index_2):
-        tokens = []
+    def _tokenize(self, words: List[str], index_1: int, index_2: int) -> dict:
+        tokens: List[str] = []
         for i, word in enumerate(words):
             tokens_wordpiece = self.tokenizer.tokenize(word)
 

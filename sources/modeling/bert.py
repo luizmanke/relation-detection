@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import torch
 import torch.nn as nn
 from torch.cuda.amp import autocast, GradScaler
@@ -6,8 +7,17 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import AutoModel, AutoConfig
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
-from typing import List
+from typing import List, Optional, Tuple
 from .base.tokenizer import BaseTokenizer
+
+
+# set seeds
+SEED = 42
+random.seed(SEED)
+np.random.seed(SEED)
+torch.manual_seed(SEED)
+if torch.cuda.device_count() > 0 and torch.cuda.is_available():
+    torch.cuda.manual_seed_all(SEED)
 
 
 class BERT(BaseTokenizer):
@@ -15,56 +25,80 @@ class BERT(BaseTokenizer):
     # hyperparameters
     BATCH_SIZE = 32
     GRADIENT_N_ACCUMULATION_STEPS = 2
-    N_EPOCHS = 5
+    N_EPOCHS = 1
     WARMUP_RATIO = 0.1
     LEARNING_RATE = 3e-5
     ADAM_EPSILON = 1e-6
     GRADIENT_MAX_NORM = 1
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.transformer_name = "neuralmind/bert-large-portuguese-cased"
         BaseTokenizer.__init__(self, self.transformer_name)
 
     def fit(self, samples: List[dict], y: np.ndarray) -> None:
         samples_tokenized = self._tokenizer_transform(samples)
-        data_loader = self._create_data_loader(samples_tokenized, y)
+        data_loader = self._create_data_loader(samples_tokenized, y, shuffle=True)
         device = self._get_device()
         self._create_model()
         self._set_up_optimizers(data_loader)
         self._fit(data_loader, device)
 
-    # def predict(self, samples: List[dict]) -> np.ndarray:
-    #     tokens = self._tokenize()
-    #     self._predict(self, x, y)
+    def predict(self, samples: List[dict]) -> np.ndarray:
+        samples_tokenized = self._tokenizer_transform(samples)
+        data_loader = self._create_data_loader(samples_tokenized)
+        device = self._get_device()
+        return self._predict(data_loader, device)
 
-    def _tokenizer_transform(self, samples):
+    def _predict(self, data_loader: DataLoader, device: torch.device) -> np.ndarray:
+        predictions = []
+        for batch in tqdm(data_loader):
+
+            self.model.eval()
+            inputs = {
+                "tokens": batch[0].to(device),
+                "attention_mask": batch[1].to(device),
+                "indexes_1": batch[3].to(device),
+                "indexes_2": batch[4].to(device),
+            }
+            with torch.no_grad():
+                logit = self.model(**inputs)[0]
+                pred = torch.argmax(logit, dim=-1)
+            predictions += pred.tolist()
+
+        return np.array(predictions)
+
+    def _tokenizer_transform(self, samples: List[dict]) -> List[dict]:
         return BaseTokenizer.transform(self, samples)
 
     @staticmethod
-    def _get_device():
+    def _get_device() -> torch.device:
         if not torch.cuda.is_available():
             raise Exception("CUDA is not available.")
         return torch.device("cuda:0")
 
-    def _create_data_loader(self, samples, y):
-        data = []
-        for sample, label in zip(samples, y):
-            data.append(sample)
-            data[-1]["label"] = label
+    def _create_data_loader(
+            self,
+            samples: List[dict],
+            y: Optional[np.ndarray] = None,
+            shuffle: bool = False
+    ) -> DataLoader:
+        data = samples
+        if y is not None:
+            for sample, label in zip(data, y):
+                sample["label"] = label
         return DataLoader(
-            data,
+            data,  # type: ignore
             batch_size=self.BATCH_SIZE,
-            shuffle=True,
-            collate_fn=self._collate_fn,
-            drop_last=False
+            shuffle=shuffle,
+            collate_fn=self._collate_fn
         )
 
-    def _create_model(self):
+    def _create_model(self) -> None:
         self.model = BaseBERT(self.transformer_name)
         self.model.to(0)
         self.model._encoder.resize_token_embeddings(len(self.tokenizer))
 
-    def _set_up_optimizers(self, data_loader):
+    def _set_up_optimizers(self, data_loader: DataLoader) -> None:
         num_training_steps = int(
             len(data_loader) * self.N_EPOCHS // self.GRADIENT_N_ACCUMULATION_STEPS)
         num_warmup_steps = int(num_training_steps * self.WARMUP_RATIO)
@@ -77,7 +111,7 @@ class BERT(BaseTokenizer):
         )
         self._scaler = GradScaler()
 
-    def _fit(self, data_loader, device):
+    def _fit(self, data_loader: DataLoader, device: torch.device) -> None:
         num_steps = 0
         for _ in range(self.N_EPOCHS):
             self.model.zero_grad()
@@ -114,7 +148,13 @@ class BERT(BaseTokenizer):
                     self.model.zero_grad()
 
     @staticmethod
-    def _collate_fn(batch):
+    def _collate_fn(batch: list) -> Tuple[
+            torch.Tensor,
+            torch.Tensor,
+            Optional[torch.Tensor],
+            torch.Tensor,
+            torch.Tensor
+    ]:
         max_len = max([len(x["tokens"]) for x in batch])
 
         tokens = [x["tokens"] + [0] * (max_len - len(x["tokens"])) for x in batch]
@@ -122,17 +162,20 @@ class BERT(BaseTokenizer):
             [1.0] * len(x["tokens"]) + [0.0] * (max_len - len(x["tokens"]))
             for x in batch
         ]
-        labels = [x["label"] for x in batch]
         indexes_1 = [x["index_1"] for x in batch]
         indexes_2 = [x["index_2"] for x in batch]
 
-        tokens = torch.tensor(tokens, dtype=torch.long)
-        input_mask = torch.tensor(input_mask, dtype=torch.float)
-        labels = torch.tensor(labels, dtype=torch.long)
-        indexes_1 = torch.tensor(indexes_1, dtype=torch.long)
-        indexes_2 = torch.tensor(indexes_2, dtype=torch.long)
+        labels = None
+        if "label" in batch[0]:
+            labels = [x["label"] for x in batch]
 
-        return tokens, input_mask, labels, indexes_1, indexes_2
+        return (
+            torch.tensor(tokens, dtype=torch.long),
+            torch.tensor(input_mask, dtype=torch.float),
+            torch.tensor(labels, dtype=torch.long) if labels is not None else None,
+            torch.tensor(indexes_1, dtype=torch.long),
+            torch.tensor(indexes_2, dtype=torch.long)
+        )
 
 
 class BaseBERT(nn.Module):
@@ -141,7 +184,7 @@ class BaseBERT(nn.Module):
     N_LABELS = 2
     DROPOUT_RATE = 0.1
 
-    def __init__(self, transformer_name):
+    def __init__(self, transformer_name: str) -> None:
         super().__init__()
         config = AutoConfig.from_pretrained(transformer_name, num_labels=self.N_LABELS)
         config.gradient_checkpointing = True
@@ -157,11 +200,11 @@ class BaseBERT(nn.Module):
     @autocast()
     def forward(
             self,
-            tokens=None,
-            attention_mask=None,
-            labels=None,
-            indexes_1=None,
-            indexes_2=None
+            tokens: torch.Tensor,
+            attention_mask: torch.Tensor,
+            labels: Optional[torch.Tensor] = None,
+            indexes_1: Optional[torch.Tensor] = None,
+            indexes_2: Optional[torch.Tensor] = None
     ):
         outputs = self._encoder(
             tokens,
@@ -179,4 +222,5 @@ class BaseBERT(nn.Module):
         if labels is not None:
             loss = self._loss_function(logits.float(), labels)
             outputs = (loss,) + outputs
+
         return outputs
