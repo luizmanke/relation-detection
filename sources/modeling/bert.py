@@ -25,7 +25,7 @@ class BERT(BaseTokenizer):
     # hyperparameters
     BATCH_SIZE = 32
     GRADIENT_N_ACCUMULATION_STEPS = 2
-    N_EPOCHS = 1
+    N_EPOCHS = 5
     WARMUP_RATIO = 0.1
     LEARNING_RATE = 3e-5
     ADAM_EPSILON = 1e-6
