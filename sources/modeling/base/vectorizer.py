@@ -5,7 +5,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 class BaseVectorizer:
 
-    def __init__(self, vectorizer_name) -> None:
+    def __init__(self, vectorizer_name: str) -> None:
         if vectorizer_name == "count":
             self.vectorizer = CountVectorizer()
         elif vectorizer_name == "spacy":

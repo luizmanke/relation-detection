@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List
-from .base_classifier import BaseClassifier
-from .base_vectorizer import BaseVectorizer
+from .base.classifier import BaseClassifier
+from .base.vectorizer import BaseVectorizer
 
 
 class PrefixMiddleSuffix(BaseVectorizer, BaseClassifier):

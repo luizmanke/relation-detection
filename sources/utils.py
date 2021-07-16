@@ -6,15 +6,17 @@ import pickle
 from sklearn import metrics
 from sklearn.model_selection import train_test_split as tt_split
 from typing import Any, Tuple
+from .modeling.bert import BERT
 from .modeling.count_vector import CountVector
 from .modeling.prefix_middle_suffix import PrefixMiddleSuffix
 from .preprocess.dbpedia import DBpedia
 
 
 DATASETS = {
-    "dbpedia": DBpedia("data/DBpediaRelations-PT-0.2.txt")
+    "dbpedia": DBpedia("data/DBpediaRelations-PT-0.2 copy.txt")
 }
 MODELS = {
+    "bert": BERT(),
     "count_vector": CountVector(),
     "prefix_middle_suffix": PrefixMiddleSuffix()
 }
