@@ -10,12 +10,13 @@ class DBpedia:
         self.file_name = file_name
 
     def get_data(self) -> Tuple[List[dict], np.ndarray]:
-        self._load_text()
-        self._extract_sentences()
-        self._span_entities()
-        self._tokenize()
-        self._mark_entities()
-        self._rename_relations()
+        if not hasattr(self, "samples"):
+            self._load_text()
+            self._extract_sentences()
+            self._span_entities()
+            self._tokenize()
+            self._mark_entities()
+            self._rename_relations()
         return self._get_data()
 
     def _load_text(self) -> None:
