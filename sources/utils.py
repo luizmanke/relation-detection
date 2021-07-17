@@ -16,9 +16,9 @@ DATASETS = {
     "dbpedia": DBpedia("data/DBpediaRelations-PT-0.2.txt")
 }
 MODELS = {
-    "bert": BERT(),
-    "count_vector": CountVector(),
-    "prefix_middle_suffix": PrefixMiddleSuffix()
+    "bert": BERT,
+    "count_vector": CountVector,
+    "prefix_middle_suffix": PrefixMiddleSuffix
 }
 RESULTS_DIR = "results"
 
@@ -74,11 +74,9 @@ def load_model(dataset_name: str, model_name: str):
 
 def save_scores(
         scores: dict,
-        dataset_name: str,
-        model_name: str,
+        dir: str,
         source: str
 ) -> None:
-    dir = f"{RESULTS_DIR}/{dataset_name}/{model_name}"
     if not os.path.isdir(dir):
         os.makedirs(dir)
     with open(f"{dir}/scores_{source}.json", "w") as file:

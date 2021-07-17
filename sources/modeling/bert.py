@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import random
 import torch
 import torch.nn as nn
@@ -40,14 +41,23 @@ class BERT(BaseTokenizer):
         data_loader = self._create_data_loader(samples_tokenized, y, shuffle=True)
         device = self._get_device()
         self._create_model()
-        self._set_up_optimizers(data_loader)
-        self._fit(data_loader, device)
+        # self._set_up_optimizers(data_loader)
+        # self._fit(data_loader, device)
 
     def predict(self, samples: List[dict]) -> np.ndarray:
         samples_tokenized = self._tokenizer_transform(samples)
         data_loader = self._create_data_loader(samples_tokenized)
         device = self._get_device()
         return self._predict(data_loader, device)
+
+    def save(self, dir: str):
+        if not os.path.isdir(dir):
+            os.makedirs(dir)
+        torch.save(self.model.state_dict(), f"{dir}/model.pt")
+
+    def load(self, dir: str):
+        self._create_model()
+        self.model.load_state_dict(torch.load(f"{dir}/model.pt"))
 
     def _predict(self, data_loader: DataLoader, device: torch.device) -> np.ndarray:
         predictions = []
@@ -72,8 +82,8 @@ class BERT(BaseTokenizer):
 
     @staticmethod
     def _get_device() -> torch.device:
-        if not torch.cuda.is_available():
-            raise Exception("CUDA is not available.")
+        # if not torch.cuda.is_available():
+        #     raise Exception("CUDA is not available.")
         return torch.device("cuda:0")
 
     def _create_data_loader(
@@ -95,8 +105,8 @@ class BERT(BaseTokenizer):
 
     def _create_model(self) -> None:
         self.model = BaseBERT(self.transformer_name)
-        self.model.to(0)
-        self.model._encoder.resize_token_embeddings(len(self.tokenizer))
+        # self.model.to(0)
+        # self.model._encoder.resize_token_embeddings(len(self.tokenizer))
 
     def _set_up_optimizers(self, data_loader: DataLoader) -> None:
         num_training_steps = int(

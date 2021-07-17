@@ -13,7 +13,7 @@ def run(args: Namespace) -> None:
 
     # train model
     start_time = datetime.now()
-    model = utils.MODELS[args.model_name]
+    model = utils.MODELS[args.model_name]()
     model.fit(samples_train, y_train)
     elapsed_time = datetime.now() - start_time
     if not args.quiet:
@@ -27,8 +27,9 @@ def run(args: Namespace) -> None:
         print(df_scores)
 
     # save results
-    utils.save_model(args.dataset_name, args.model_name)
-    utils.save_scores(df_scores, args.dataset_name, args.model_name, "train")
+    dir = f"{utils.RESULTS_DIR}/{args.dataset_name}/{args.model_name}"
+    model.save(dir)
+    utils.save_scores(df_scores, dir, "train")
 
 
 if __name__ == "__main__":
