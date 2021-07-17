@@ -6,12 +6,13 @@ import torch.nn as nn
 import warnings
 from torch.cuda.amp import autocast, GradScaler
 from torch.utils.data import DataLoader
-from transformers import AutoModel, AutoConfig
+from transformers import AutoModel, AutoConfig, logging
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 from typing import List, Optional, Tuple
 from .base.tokenizer import BaseTokenizer
 
 # disable warnings
+logging.set_verbosity_warning()
 warnings.filterwarnings("ignore", category=UserWarning)
 
 # set seeds
