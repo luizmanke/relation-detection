@@ -1,4 +1,6 @@
 import numpy as np
+import os
+import pickle
 from typing import List
 from .base.classifier import BaseClassifier
 from .base.vectorizer import BaseVectorizer
@@ -20,6 +22,16 @@ class PrefixMiddleSuffix(BaseVectorizer, BaseClassifier):
         sentences = self._get_prefix_middle_suffix(samples)
         x = self._vectorizer_transform(sentences)
         return BaseClassifier.predict(self, x)
+
+    def save(self, dir: str) -> None:
+        if not os.path.isdir(dir):
+            os.makedirs(dir)
+        with open(f"{dir}/model.pickle", "wb") as file:
+            pickle.dump(self.__dict__, file)
+
+    def load(self, dir: str) -> None:
+        with open(f"{dir}/model.pickle", "rb") as file:
+            self.__dict__.update(pickle.load(file))
 
     @staticmethod
     def _get_prefix_middle_suffix(samples: List[dict]) -> List[str]:
