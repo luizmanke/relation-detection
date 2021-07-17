@@ -3,14 +3,16 @@ import os
 import random
 import torch
 import torch.nn as nn
+import warnings
 from torch.cuda.amp import autocast, GradScaler
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 from transformers import AutoModel, AutoConfig
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 from typing import List, Optional, Tuple
 from .base.tokenizer import BaseTokenizer
 
+# disable warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # set seeds
 SEED = 42
@@ -50,18 +52,18 @@ class BERT(BaseTokenizer):
         device = self._get_device()
         return self._predict(data_loader, device)
 
-    def save(self, dir: str):
+    def save(self, dir: str) -> None:
         if not os.path.isdir(dir):
             os.makedirs(dir)
         torch.save(self.model.state_dict(), f"{dir}/model.pt")
 
-    def load(self, dir: str):
+    def load(self, dir: str) -> None:
         self._create_model()
         self.model.load_state_dict(torch.load(f"{dir}/model.pt"))
 
     def _predict(self, data_loader: DataLoader, device: torch.device) -> np.ndarray:
         predictions = []
-        for batch in tqdm(data_loader):
+        for batch in data_loader:
 
             self.model.eval()
             inputs = {
@@ -125,7 +127,7 @@ class BERT(BaseTokenizer):
         num_steps = 0
         for _ in range(self.N_EPOCHS):
             self.model.zero_grad()
-            for step, batch in enumerate(tqdm(data_loader)):
+            for step, batch in enumerate(data_loader):
 
                 # train model
                 self.model.train()
