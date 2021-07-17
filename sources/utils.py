@@ -1,7 +1,7 @@
 import argparse
+import json
 import numpy as np
 import os
-import pandas as pd
 import pickle
 from sklearn import metrics
 from sklearn.model_selection import train_test_split as tt_split
@@ -42,19 +42,19 @@ def train_test_split(x: Any, y: np.ndarray) -> Tuple[Any, Any, np.ndarray, np.nd
     return tt_split(x, y, stratify=y, train_size=0.8, random_state=42)
 
 
-def evaluate(y_true: np.ndarray, y_pred: np.ndarray) -> pd.Series:
+def evaluate(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     tn, fp, fn, tp = metrics.confusion_matrix(y_true, y_pred).ravel()
-    return pd.DataFrame([{
-        "TP": tp,
-        "TN": tn,
-        "FP": fp,
-        "FN": fn,
+    return {
+        "TP": int(tp),
+        "TN": int(tn),
+        "FP": int(fp),
+        "FN": int(fn),
         "accuracy": metrics.accuracy_score(y_true, y_pred),
         "recall": metrics.recall_score(y_true, y_pred),
         "precision": metrics.precision_score(y_true, y_pred),
         "f1": metrics.f1_score(y_true, y_pred),
         "mcc": metrics.matthews_corrcoef(y_true, y_pred)
-    }])
+    }
 
 
 def save_model(dataset_name: str, model_name: str) -> None:
@@ -73,7 +73,7 @@ def load_model(dataset_name: str, model_name: str):
 
 
 def save_scores(
-        df_scores: pd.DataFrame,
+        scores: dict,
         dataset_name: str,
         model_name: str,
         source: str
@@ -81,4 +81,5 @@ def save_scores(
     dir = f"{RESULTS_DIR}/{dataset_name}/{model_name}"
     if not os.path.isdir(dir):
         os.makedirs(dir)
-    df_scores.to_csv(f"{dir}/scores_{source}.csv")
+    with open(f"{dir}/scores_{source}.json", "w") as file:
+        json.dump(scores, file)
