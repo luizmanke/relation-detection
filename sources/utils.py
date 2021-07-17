@@ -31,7 +31,7 @@ def get_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     if not args.quiet:
-        print("\n## Input args:")
+        print("\n## Input args")
         for arg in vars(args):
             print(f"{arg}: {getattr(args, arg)}")
 
