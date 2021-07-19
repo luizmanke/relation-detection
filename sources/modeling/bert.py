@@ -12,7 +12,8 @@ from typing import List, Optional, Tuple
 from .base.tokenizer import BaseTokenizer
 
 # disable warnings
-logging.set_verbosity_warning()
+logging.set_verbosity_error()
+warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
 # set seeds
