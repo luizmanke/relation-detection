@@ -5,21 +5,12 @@ import os
 import pickle
 from sklearn import metrics
 from sklearn.model_selection import train_test_split as tt_split
-from typing import Any, Tuple
-from .modeling.bert import BERT
-from .modeling.count_vector import CountVector
-from .modeling.prefix_middle_suffix import PrefixMiddleSuffix
-from .preprocess.dbpedia import DBpedia
+from typing import Any, Dict, Tuple
 
 
-DATASETS = {
-    "dbpedia": DBpedia("data/DBpediaRelations-PT-0.2.txt")
-}
-MODELS = {
-    "bert": BERT,
-    "count_vector": CountVector,
-    "prefix_middle_suffix": PrefixMiddleSuffix
-}
+# Globals
+DATASETS: Dict[str, Any] = {}
+MODELS: Dict[str, Any] = {}
 RESULTS_DIR = "results"
 
 
@@ -30,12 +21,35 @@ def get_args() -> argparse.Namespace:
     parser.add_argument("--quiet", type=bool, default=False)
     args = parser.parse_args()
 
+    _load_datasets(args.dataset_name)
+    _load_models(args.model_name)
+
     if not args.quiet:
         print("\n## Input args")
         for arg in vars(args):
             print(f"{arg}: {getattr(args, arg)}")
 
     return args
+
+
+def _load_datasets(dataset_name: str) -> None:
+    is_all = True if dataset_name == "all" else False
+    if dataset_name == "dbpedia" or is_all:
+        from .preprocess.dbpedia import DBpedia
+        DATASETS["dbpedia"] = DBpedia("data/DBpediaRelations-PT-0.2.txt")
+
+
+def _load_models(model_name: str) -> None:
+    is_all = True if model_name == "all" else False
+    if model_name == "bert" or is_all:
+        from .modeling.bert import BERT
+        MODELS["bert"] = BERT
+    if model_name == "count_vector" or is_all:
+        from .modeling.count_vector import CountVector
+        MODELS["count_vector"] = CountVector
+    if model_name == "prefix_middle_suffix" or is_all:
+        from .modeling.prefix_middle_suffix import PrefixMiddleSuffix
+        MODELS["prefix_middle_suffix"] = PrefixMiddleSuffix
 
 
 def train_test_split(x: Any, y: np.ndarray) -> Tuple[Any, Any, np.ndarray, np.ndarray]:
