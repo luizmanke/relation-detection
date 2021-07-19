@@ -1,4 +1,5 @@
 # dependencies
+catboost==0.26
 defusedxml==0.7.1
 imbalanced-learn==0.8.0
 numpy==1.21.0

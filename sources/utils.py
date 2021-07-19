@@ -44,6 +44,9 @@ def _load_models(model_name: str) -> None:
     if model_name == "bert" or is_all:
         from .modeling.bert import BERT
         MODELS["bert"] = BERT
+    if model_name == "catboost" or is_all:
+        from .modeling.catboost import CatBoost
+        MODELS["catboost"] = CatBoost
     if model_name == "count_vector" or is_all:
         from .modeling.count_vector import CountVector
         MODELS["count_vector"] = CountVector
