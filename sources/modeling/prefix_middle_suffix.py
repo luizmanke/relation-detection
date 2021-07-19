@@ -38,9 +38,9 @@ class PrefixMiddleSuffix(BaseVectorizer, BaseClassifier):
         prefix_middle_suffix = []
         for sample in samples:
             prefix_middle_suffix.extend([
-                " ".join(sample["tokens"][:sample['index_1']]),
-                " ".join(sample["tokens"][sample['index_1']+1:sample['index_2']]),
-                " ".join(sample["tokens"][sample['index_2']+1:])
+                " ".join(sample["tokens"][:sample["index_1"]]),
+                " ".join(sample["tokens"][sample["index_1"]+1:sample["index_2"]]),
+                " ".join(sample["tokens"][sample["index_2"]+1:])
             ])
         return prefix_middle_suffix
 

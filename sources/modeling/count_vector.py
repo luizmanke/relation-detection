@@ -37,7 +37,7 @@ class CountVector(BaseVectorizer, BaseClassifier):
     def _get_middle_sentences(samples: List[dict]) -> List[str]:
         middle_sentences = []
         for sample in samples:
-            middle_tokens = sample["tokens"][sample['index_1']+1:sample['index_2']]
+            middle_tokens = sample["tokens"][sample["index_1"]+1:sample["index_2"]]
             middle_sentences.append(" ".join(middle_tokens))
         return middle_sentences
 
