@@ -4,8 +4,8 @@ import numpy as np
 import os
 import pickle
 from sklearn import metrics
-from sklearn.model_selection import train_test_split as tt_split
-from typing import Any, Dict, Tuple
+from sklearn.model_selection import GroupShuffleSplit
+from typing import Any, Dict, List, Tuple
 
 
 # Globals
@@ -23,11 +23,6 @@ def get_args() -> argparse.Namespace:
 
     _load_datasets(args.dataset_name)
     _load_models(args.model_name)
-
-    if not args.quiet:
-        print("\n## Input args")
-        for arg in vars(args):
-            print(f"{arg}: {getattr(args, arg)}")
 
     return args
 
@@ -55,8 +50,20 @@ def _load_models(model_name: str) -> None:
         MODELS["prefix_middle_suffix"] = PrefixMiddleSuffix
 
 
-def train_test_split(x: Any, y: np.ndarray) -> Tuple[Any, Any, np.ndarray, np.ndarray]:
-    return tt_split(x, y, stratify=y, train_size=0.8, random_state=42)
+def train_test_split(x: List[dict], y: np.ndarray) -> Tuple[
+        List[dict], List[dict], np.ndarray, np.ndarray]:
+
+    groups = [" ".join(item["tokens"]) for item in x]
+    indexes_train, indexes_test = next(
+        GroupShuffleSplit(train_size=0.8, n_splits=2, random_state=42)
+        .split(x, y, groups)
+    )
+    x_train = [x[i] for i in indexes_train]
+    x_test = [x[i] for i in indexes_test]
+    y_train = y[indexes_train]
+    y_test = y[indexes_test]
+
+    return x_train, x_test, y_train, y_test
 
 
 def evaluate(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
