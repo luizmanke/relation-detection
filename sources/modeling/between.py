@@ -6,7 +6,7 @@ from .base.classifier import BaseClassifier
 from .base.vectorizer import BaseVectorizer
 
 
-class CountVector(BaseVectorizer, BaseClassifier):
+class Between(BaseVectorizer, BaseClassifier):
 
     def __init__(self, **kwargs):
         BaseVectorizer.__init__(self, vectorizer_name="count")

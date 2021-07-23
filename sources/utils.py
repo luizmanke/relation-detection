@@ -35,19 +35,19 @@ def _load_datasets(dataset_name: str) -> None:
 
 
 def _load_models(model_name: str) -> None:
-    is_all = True if model_name == "all" else False
-    if model_name == "bert" or is_all:
-        from .modeling.bert import BERT
-        MODELS["bert"] = BERT
-    if model_name == "catboost" or is_all:
+    compute_all = True if model_name == "all" else False
+    if model_name == "transformer" or compute_all:
+        from .modeling.transformer import Transformer
+        MODELS["transformer"] = Transformer
+    if model_name == "catboost" or compute_all:
         from .modeling.catboost import CatBoost
         MODELS["catboost"] = CatBoost
-    if model_name == "count_vector" or is_all:
-        from .modeling.count_vector import CountVector
-        MODELS["count_vector"] = CountVector
-    if model_name == "prefix_middle_suffix" or is_all:
-        from .modeling.prefix_middle_suffix import PrefixMiddleSuffix
-        MODELS["prefix_middle_suffix"] = PrefixMiddleSuffix
+    if model_name == "between" or compute_all:
+        from .modeling.between import Between
+        MODELS["between"] = Between
+    if model_name == "surround" or compute_all:
+        from .modeling.surround import Surround
+        MODELS["surround"] = Surround
 
 
 def train_test_split(x: List[dict], y: np.ndarray) -> Tuple[

@@ -6,20 +6,20 @@ from .base.classifier import BaseClassifier
 from .base.vectorizer import BaseVectorizer
 
 
-class PrefixMiddleSuffix(BaseVectorizer, BaseClassifier):
+class Surround(BaseVectorizer, BaseClassifier):
 
     def __init__(self, **kwargs):
         BaseVectorizer.__init__(self, vectorizer_name="spacy")
         BaseClassifier.__init__(self, **kwargs)
 
     def fit(self, samples: List[dict], y: np.ndarray) -> None:
-        sentences = self._get_prefix_middle_suffix(samples)
+        sentences = self._get_surroundings(samples)
         self._vectorizer_fit(sentences)
         x = self._vectorizer_transform(sentences)
         BaseClassifier.fit(self, x, y)
 
     def predict(self, samples: List[dict]) -> np.ndarray:
-        sentences = self._get_prefix_middle_suffix(samples)
+        sentences = self._get_surroundings(samples)
         x = self._vectorizer_transform(sentences)
         return BaseClassifier.predict(self, x)
 
@@ -34,15 +34,15 @@ class PrefixMiddleSuffix(BaseVectorizer, BaseClassifier):
             self.__dict__.update(pickle.load(file))
 
     @staticmethod
-    def _get_prefix_middle_suffix(samples: List[dict]) -> List[str]:
-        prefix_middle_suffix = []
+    def _get_surroundings(samples: List[dict]) -> List[str]:
+        surroundings = []
         for sample in samples:
-            prefix_middle_suffix.extend([
+            surroundings.extend([
                 " ".join(sample["tokens"][:sample["index_1"]]),
                 " ".join(sample["tokens"][sample["index_1"]+1:sample["index_2"]]),
                 " ".join(sample["tokens"][sample["index_2"]+1:])
             ])
-        return prefix_middle_suffix
+        return surroundings
 
     def _vectorizer_fit(self, sentences: List[str]) -> None:
         BaseVectorizer.fit(self, sentences)

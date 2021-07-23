@@ -25,7 +25,7 @@ if torch.cuda.device_count() > 0 and torch.cuda.is_available():
     torch.cuda.manual_seed_all(SEED)
 
 
-class BERT(BaseTokenizer):
+class Transformer(BaseTokenizer):
 
     # hyperparameters
     BATCH_SIZE = 32
@@ -108,7 +108,7 @@ class BERT(BaseTokenizer):
         )
 
     def _create_model(self) -> None:
-        self.model = BaseBERT(self.transformer_name)
+        self.model = BaseTransformer(self.transformer_name)
         self.model.to(0)
         self.model._encoder.resize_token_embeddings(len(self.tokenizer))
 
@@ -192,7 +192,7 @@ class BERT(BaseTokenizer):
         )
 
 
-class BaseBERT(nn.Module):
+class BaseTransformer(nn.Module):
 
     # hyperparameters
     N_LABELS = 2

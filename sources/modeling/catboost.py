@@ -8,17 +8,17 @@ from typing import List, Optional, Tuple
 
 class CatBoost(CatBoostClassifier):
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         CatBoostClassifier.__init__(self, random_state=42)
 
     def fit(self, samples: List[dict], y: np.ndarray) -> None:
-        sentences = self._get_prefix_middle_suffix(samples)
+        sentences = self._get_surroundings(samples)
         df = self._to_pandas(sentences, y)
         df_train, df_test = self._train_test_split(df)
         self._fit_model(df_train, df_test)
 
     def predict(self, samples: List[dict]) -> np.ndarray:
-        sentences = self._get_prefix_middle_suffix(samples)
+        sentences = self._get_surroundings(samples)
         df = self._to_pandas(sentences)
         return self._predict_labels(df)
 
@@ -31,15 +31,15 @@ class CatBoost(CatBoostClassifier):
         CatBoostClassifier.load_model(self, f"{dir}/model")
 
     @staticmethod
-    def _get_prefix_middle_suffix(samples: List[dict]) -> List[dict]:
-        prefix_middle_suffix = []
+    def _get_surroundings(samples: List[dict]) -> List[dict]:
+        surroundings = []
         for sample in samples:
-            prefix_middle_suffix.append({
+            surroundings.append({
                 "prefix": " ".join(sample["tokens"][:sample["index_1"]]),
                 "middle": " ".join(sample["tokens"][sample["index_1"]+1:sample["index_2"]]),
                 "suffix": " ".join(sample["tokens"][sample["index_2"]+1:])
             })
-        return prefix_middle_suffix
+        return surroundings
 
     @staticmethod
     def _to_pandas(sentences: List[dict], y: Optional[np.ndarray] = None) -> pd.DataFrame:
