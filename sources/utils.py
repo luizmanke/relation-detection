@@ -73,11 +73,11 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
         "TN": int(tn),
         "FP": int(fp),
         "FN": int(fn),
-        "accuracy": metrics.accuracy_score(y_true, y_pred),
-        "recall": metrics.recall_score(y_true, y_pred),
-        "precision": metrics.precision_score(y_true, y_pred),
-        "f1": metrics.f1_score(y_true, y_pred),
-        "mcc": metrics.matthews_corrcoef(y_true, y_pred)
+        "accuracy": round(metrics.accuracy_score(y_true, y_pred), 4),
+        "recall": round(metrics.recall_score(y_true, y_pred), 4),
+        "precision": round(metrics.precision_score(y_true, y_pred), 4),
+        "f1": round(metrics.f1_score(y_true, y_pred), 4),
+        "mcc": round(metrics.matthews_corrcoef(y_true, y_pred), 4)
     }
 
 

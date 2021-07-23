@@ -70,7 +70,7 @@ def _predict(args: Namespace) -> None:
     y_pred_test = model.predict(samples_test)
     scores = utils.evaluate(y_test, y_pred_test)
     if not args.quiet:
-        print(f"testing scores: {scores}")
+        print(f"testing scores:  {scores}")
 
     # save results
     utils.save_scores(scores, dir, "test")
