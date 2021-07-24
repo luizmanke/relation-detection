@@ -1,5 +1,7 @@
 import numpy as np
+import os
 import re
+import requests
 from imblearn.under_sampling import RandomUnderSampler
 from typing import Any, Dict, List, Tuple
 
@@ -7,10 +9,12 @@ from typing import Any, Dict, List, Tuple
 class DBpedia:
 
     def __init__(self):
-        self.file_name = "data/DBpediaRelations-PT-0.2.txt"
+        self.file_dir_ = "/tmp/relation_detection"
+        self.file_name_ = "DBpediaRelations-PT-0.2.txt"
 
     def load(self) -> None:
         if not hasattr(self, "samples"):
+            self._download_file()
             self._load_text()
             self._extract_sentences()
             self._span_entities()
@@ -23,9 +27,19 @@ class DBpedia:
         selected_samples = self._resample(filtered_samples)
         return self._get_data(selected_samples)
 
+    def _download_file(self) -> None:
+        if not os.path.isfile(f"{self.file_dir_}/{self.file_name_}"):
+            os.makedirs(self.file_dir_, exist_ok=True)
+            response = requests.get(
+                "https://github.com/luizmanke/relation-detection/"
+                "raw/master/data/DBpediaRelations-PT-0.2.txt"
+            )
+            with open(f"{self.file_dir_}/{self.file_name_}", "wb") as file:
+                file.write(response.content)
+
     def _load_text(self) -> None:
-        with open(self.file_name, "r") as text_file:
-            self.text = text_file.read()
+        with open(f"{self.file_dir_}/{self.file_name_}", "r") as text_file:
+            self.text_ = text_file.read()
 
     def _extract_sentences(self) -> None:
         KEYS = [
@@ -38,9 +52,9 @@ class DBpedia:
             "REL TYPE"
         ]
 
-        self.samples = []
+        self.samples_ = []
         sample: Dict[str, Any] = {}
-        for line in self.text.split("\n"):
+        for line in self.text_.split("\n"):
 
             if line.find(":") > 0:  # content
                 key = KEYS[len(sample)]
@@ -49,11 +63,11 @@ class DBpedia:
 
             if line.find("****") == 0:  # break
                 if sample:
-                    self.samples.append(sample)
+                    self.samples_.append(sample)
                     sample = {}
 
     def _span_entities(self) -> None:
-        for sample in self.samples:
+        for sample in self.samples_:
             entity_1 = sample["ENTITY1"].replace(".", r"\.")
             entity_2 = sample["ENTITY2"].replace(".", r"\.")
 
@@ -86,7 +100,7 @@ class DBpedia:
                         ]
 
     def _tokenize(self) -> None:
-        for sample in self.samples:
+        for sample in self.samples_:
             if "spans" not in sample:
                 continue
 
@@ -100,7 +114,7 @@ class DBpedia:
                     sample["tokens"].append(span)
 
     def _mark_entities(self) -> None:
-        for sample in self.samples:
+        for sample in self.samples_:
             if "tokens" not in sample:
                 continue
 
@@ -113,11 +127,11 @@ class DBpedia:
                     break
 
     def _rename_relations(self) -> None:
-        for sample in self.samples:
+        for sample in self.samples_:
             sample["relation"] = 0 if sample["REL TYPE"] == "other" else 1
 
     def _filter_samples(self) -> List[dict]:
-        return [sample for sample in self.samples if "tokens" in sample]
+        return [sample for sample in self.samples_ if "tokens" in sample]
 
     @staticmethod
     def _resample(samples: List[dict]) -> List[dict]:
