@@ -54,15 +54,6 @@ class Transformer(BaseTokenizer):
         device = self._get_device()
         return self._predict(data_loader, device)
 
-    def save(self, dir: str) -> None:
-        if not os.path.isdir(dir):
-            os.makedirs(dir)
-        torch.save(self.model.state_dict(), f"{dir}/model.pt")
-
-    def load(self, dir: str) -> None:
-        self._create_model()
-        self.model.load_state_dict(torch.load(f"{dir}/model.pt"))
-
     def _predict(self, data_loader: DataLoader, device: torch.device) -> np.ndarray:
         predictions = []
         for batch in data_loader:

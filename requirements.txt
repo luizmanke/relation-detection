@@ -1,19 +1,15 @@
 # dependencies
-catboost==0.26
-defusedxml==0.7.1
-imbalanced-learn==0.8.0
-numpy==1.21.0
-pandas==1.3.0
-scikit-learn==0.24.2
-spacy==3.1.0
-torch==1.9.0
-transformers==4.8.2
-
-# notebook
-jupyter==1.0.0
+catboost  # ==0.26
+imbalanced-learn  # ==0.8.0
+numpy  # ==1.21.0
+pandas  # ==1.3.0
+scikit-learn  # ==0.24.2
+spacy  # ==3.1.0
+torch  # ==1.9.0
+transformers  # ==4.8.2
 
 # testing
-pytest==6.2.4 #dev
-pytest-mypy==0.8.1 #dev
-pytest-cov==2.12.1 #dev
-flake8==3.9.2 #dev
+pytest  # ==6.2.4
+pytest-mypy  # ==0.8.1
+pytest-cov  # ==2.12.1
+flake8  # ==3.9.2

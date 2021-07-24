@@ -6,10 +6,10 @@ from typing import Any, Dict, List, Tuple
 
 class DBpedia:
 
-    def __init__(self, file_name: str):
-        self.file_name = file_name
+    def __init__(self):
+        self.file_name = "data/DBpediaRelations-PT-0.2.txt"
 
-    def get_data(self) -> Tuple[List[dict], np.ndarray]:
+    def load(self) -> None:
         if not hasattr(self, "samples"):
             self._load_text()
             self._extract_sentences()
@@ -17,7 +17,11 @@ class DBpedia:
             self._tokenize()
             self._mark_entities()
             self._rename_relations()
-        return self._get_data()
+
+    def get_data(self) -> Tuple[List[dict], np.ndarray, List[str]]:
+        filtered_samples = self._filter_samples()
+        selected_samples = self._resample(filtered_samples)
+        return self._get_data(selected_samples)
 
     def _load_text(self) -> None:
         with open(self.file_name, "r") as text_file:
@@ -112,22 +116,24 @@ class DBpedia:
         for sample in self.samples:
             sample["relation"] = 0 if sample["REL TYPE"] == "other" else 1
 
-    def _get_data(self) -> Tuple[List[dict], np.ndarray]:
-        samples = [sample for sample in self.samples if "tokens" in sample]
+    def _filter_samples(self) -> List[dict]:
+        return [sample for sample in self.samples if "tokens" in sample]
 
-        # resample
+    @staticmethod
+    def _resample(samples: List[dict]) -> List[dict]:
         labels = np.array([sample["relation"] for sample in samples]).reshape(-1, 1)
         indexes = np.array([i for i, _ in enumerate(labels)]).reshape(-1, 1)
-        new_indexes, _ = RandomUnderSampler(random_state=42).fit_resample(indexes, labels)
-        new_indexes = sorted(new_indexes[:, 0])
+        selected_indexes, _ = RandomUnderSampler(random_state=42).fit_resample(indexes, labels)
+        selected_indexes = sorted(selected_indexes[:, 0])
+        return [sample for i, sample in enumerate(samples) if i in selected_indexes]
 
-        # select samples
-        KEYS = ["tokens", "index_1", "index_2", "relation"]
+    def _get_data(self, samples: List[dict]) -> Tuple[List[dict], np.ndarray, List[str]]:
+        KEYS = ["tokens", "index_1", "index_2", "relation", "SENTENCE"]
         selected_samples = [
             {
-                key: value for key, value in samples[i].items() if key in KEYS
-            } for i in new_indexes
+                key: value for key, value in sample.items() if key in KEYS
+            } for sample in samples
         ]
-        selected_y = np.array([sample.pop("relation") for sample in selected_samples])
-
-        return selected_samples, selected_y
+        selected_labels = np.array([sample.pop("relation") for sample in selected_samples])
+        selected_groups = [sample.pop("SENTENCE") for sample in selected_samples]
+        return selected_samples, selected_labels, selected_groups

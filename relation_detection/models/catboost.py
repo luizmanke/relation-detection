@@ -20,15 +20,7 @@ class CatBoost(CatBoostClassifier):
     def predict(self, samples: List[dict]) -> np.ndarray:
         sentences = self._get_surroundings(samples)
         df = self._to_pandas(sentences)
-        return self._predict_labels(df)
-
-    def save(self, dir: str) -> None:
-        if not os.path.isdir(dir):
-            os.makedirs(dir)
-        CatBoostClassifier.save_model(self, f"{dir}/model")
-
-    def load(self, dir: str) -> None:
-        CatBoostClassifier.load_model(self, f"{dir}/model")
+        return CatBoostClassifier.predict(self, df)
 
     @staticmethod
     def _get_surroundings(samples: List[dict]) -> List[dict]:
@@ -66,6 +58,3 @@ class CatBoost(CatBoostClassifier):
             text_features=FEATURES
         )
         CatBoostClassifier.fit(self, train_pool, eval_set=eval_pool, verbose=False)
-
-    def _predict_labels(self, df: pd.DataFrame) -> np.ndarray:
-        return CatBoostClassifier.predict(self, df)
