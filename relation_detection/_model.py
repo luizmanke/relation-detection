@@ -1,4 +1,5 @@
 import numpy as np
+from datetime import datetime as dt
 from sklearn import metrics
 from sklearn.model_selection import GroupShuffleSplit
 from typing import Any, List, Tuple
@@ -41,10 +42,15 @@ class Model:
 
     def _train(self, indexes: np.ndarray, fold: int) -> None:
         samples_train, labels_train = self._select_samples(self.samples_, self.labels_, indexes)
+
+        start_time = dt.now()
         self.model_ = self.available_methods_[self.model_name_]()
         self.model_.fit(samples_train, labels_train)
+        elapsed_time = dt.now() - start_time
+
         labels_pred_train = self.model_.predict(samples_train)
         self._evaluate(labels_train, labels_pred_train, fold, "train")
+        self.results_["train"] = elapsed_time
 
     def _test(self, indexes: np.ndarray, fold: int) -> None:
         samples_test, labels_test = self._select_samples(self.samples_, self.labels_, indexes)
