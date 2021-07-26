@@ -50,7 +50,7 @@ class Model:
 
         labels_pred_train = self.model_.predict(samples_train)
         self._evaluate(labels_train, labels_pred_train, fold, "train")
-        self.results_["train"] = elapsed_time
+        self.results_["train"][fold]["time"] = elapsed_time
 
     def _test(self, indexes: np.ndarray, fold: int) -> None:
         samples_test, labels_test = self._select_samples(self.samples_, self.labels_, indexes)
