@@ -1,6 +1,4 @@
 import numpy as np
-import os
-import pickle
 from typing import List
 from .base.classifier import BaseClassifier
 from .base.vectorizer import BaseVectorizer
@@ -12,13 +10,13 @@ class Between(BaseVectorizer, BaseClassifier):
         BaseVectorizer.__init__(self, vectorizer_name="count")
         BaseClassifier.__init__(self, **kwargs)
 
-    def fit(self, samples: List[dict], y: np.ndarray) -> None:
+    def fit(self, samples: List[dict], y: np.ndarray) -> None:  # type: ignore[override]
         sentences = self._get_middle_sentences(samples)
         self._vectorizer_fit(sentences)
         x = self._vectorizer_transform(sentences)
         BaseClassifier.fit(self, x, y)
 
-    def predict(self, samples: List[dict]) -> np.ndarray:
+    def predict(self, samples: List[dict]) -> np.ndarray:  # type: ignore[override]
         sentences = self._get_middle_sentences(samples)
         x = self._vectorizer_transform(sentences)
         return BaseClassifier.predict(self, x)
