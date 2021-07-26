@@ -2,7 +2,7 @@ import numpy as np
 from datetime import datetime as dt
 from sklearn import metrics
 from sklearn.model_selection import GroupShuffleSplit
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 from . import Dataset
 from .models.between import Between
 from .models.catboost import CatBoost
@@ -30,7 +30,7 @@ class Model:
         self.model_name_ = model_name
 
     def cross_validate(self, dataset: Dataset) -> None:
-        self.results_ = {"train": {}, "test": {}}
+        self.results_: Dict[str, Any] = {"train": {}, "test": {}}
         self.samples_, self.labels_, self.groups_ = dataset.get_data()
         for fold, (indexes_train, indexes_test) in enumerate(self._create_splits()):
             self._train(indexes_train, fold)
