@@ -139,7 +139,7 @@ class DBpedia:
         indexes = np.array([i for i, _ in enumerate(labels)]).reshape(-1, 1)
         selected_indexes, _ = RandomUnderSampler(random_state=42).fit_resample(indexes, labels)
         selected_indexes = sorted(selected_indexes[:, 0])
-        return [sample for i, sample in enumerate(samples) if i in selected_indexes]
+        return [samples[i] for i in selected_indexes]
 
     def _get_data(self, samples: List[dict]) -> Tuple[List[dict], np.ndarray, List[str]]:
         KEYS = ["tokens", "index_1", "index_2", "relation", "SENTENCE"]
