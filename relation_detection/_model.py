@@ -2,6 +2,7 @@ import numpy as np
 from datetime import datetime as dt
 from sklearn import metrics
 from sklearn.model_selection import GroupShuffleSplit
+from tqdm import tqdm
 from typing import Any, Dict, List, Tuple
 from . import Dataset
 from .models.between import Between
@@ -12,6 +13,7 @@ from .models.transformer import Transformer
 
 class Model:
 
+    n_folds_ = 5
     available_methods_ = {
         "between": Between,
         "catboost": CatBoost,
@@ -32,12 +34,13 @@ class Model:
     def cross_validate(self, dataset: Dataset) -> None:
         self.results_: Dict[str, Any] = {"train": {}, "test": {}}
         self.samples_, self.labels_, self.groups_ = dataset.get_data()
-        for fold, (indexes_train, indexes_test) in enumerate(self._create_splits()):
+        for fold, (indexes_train, indexes_test) in tqdm(
+                enumerate(self._create_splits()), total=self.n_folds_):
             self._train(indexes_train, fold)
             self._test(indexes_test, fold)
 
     def _create_splits(self) -> Any:
-        gss = GroupShuffleSplit(train_size=0.8, n_splits=5, random_state=42)
+        gss = GroupShuffleSplit(train_size=0.8, n_splits=self.n_folds_, random_state=42)
         return gss.split(self.samples_, self.labels_, self.groups_)
 
     def _train(self, indexes: np.ndarray, fold: int) -> None:
