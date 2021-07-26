@@ -36,7 +36,7 @@ class Transformer(BaseTokenizer):
         self.transformer_name = "neuralmind/bert-large-portuguese-cased"
         BaseTokenizer.__init__(self, self.transformer_name)
 
-    def fit(self, samples: List[dict], y: np.ndarray) -> None:
+    def fit(self, samples: List[dict], y: np.ndarray, groups: List[str]) -> None:
         samples_tokenized = self._tokenizer_transform(samples)
         data_loader = self._create_data_loader(samples_tokenized, y, shuffle=True)
         device = self._get_device()

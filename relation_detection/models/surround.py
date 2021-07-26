@@ -10,7 +10,9 @@ class Surround(BaseVectorizer, BaseClassifier):
         BaseVectorizer.__init__(self, vectorizer_name="spacy")
         BaseClassifier.__init__(self, **kwargs)
 
-    def fit(self, samples: List[dict], y: np.ndarray) -> None:  # type: ignore[override]
+    def fit(  # type: ignore[override]
+            self, samples: List[dict], y: np.ndarray, groups: List[str]
+    ) -> None:
         sentences = self._get_surroundings(samples)
         self._vectorizer_fit(sentences)
         x = self._vectorizer_transform(sentences)

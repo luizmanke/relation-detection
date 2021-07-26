@@ -41,11 +41,11 @@ class Model:
         return gss.split(self.samples_, self.labels_, self.groups_)
 
     def _train(self, indexes: np.ndarray, fold: int) -> None:
-        samples_train, labels_train = self._select_samples(self.samples_, self.labels_, indexes)
+        samples_train, labels_train, groups_train = self._select_samples(indexes)
 
         start_time = dt.now()
         self.model_ = self.available_methods_[self.model_name_]()
-        self.model_.fit(samples_train, labels_train)
+        self.model_.fit(samples_train, labels_train, groups_train)
         elapsed_time = dt.now() - start_time
 
         labels_pred_train = self.model_.predict(samples_train)
@@ -53,17 +53,15 @@ class Model:
         self.results_["train"][fold]["time"] = elapsed_time
 
     def _test(self, indexes: np.ndarray, fold: int) -> None:
-        samples_test, labels_test = self._select_samples(self.samples_, self.labels_, indexes)
+        samples_test, labels_test, _ = self._select_samples(indexes)
         labels_pred_test = self.model_.predict(samples_test)
         self._evaluate(labels_test, labels_pred_test, fold, "test")
 
-    @staticmethod
-    def _select_samples(
-            samples: List[dict], labels: np.ndarray, indexes: np.ndarray
-    ) -> Tuple[List[dict], np.ndarray]:
-        selected_samples = [samples[i] for i in indexes]
-        selected_labels = labels[indexes]
-        return selected_samples, selected_labels
+    def _select_samples(self, indexes: np.ndarray) -> Tuple[List[dict], np.ndarray, List[str]]:
+        selected_samples = [self.samples_[i] for i in indexes]
+        selected_labels = self.labels_[indexes]
+        selected_groups = [self.groups_[i] for i in indexes]
+        return selected_samples, selected_labels, selected_groups
 
     def _evaluate(
             self, labels_true: np.ndarray, labels_pred: np.ndarray, fold: int, split: str
