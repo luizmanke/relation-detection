@@ -1,12 +1,14 @@
 import numpy as np
 from typing import List, Tuple
 from .datasets.dbpedia import DBpedia
+from .datasets.news import News
 
 
 class Dataset:
 
     available_sets_ = {
-        "dbpedia": DBpedia
+        "dbpedia": DBpedia,
+        "news": News
     }
 
     def __init__(self) -> None:
@@ -18,7 +20,7 @@ class Dataset:
     def load(self, dataset_name: str) -> None:
         assert dataset_name in self.available_sets_
         self.dataset_ = self.available_sets_[dataset_name]()
-        self.dataset_.load()
+        self.dataset_.load()  # type: ignore
 
     def get_data(self) -> Tuple[List[dict], np.ndarray, List[str]]:
-        return self.dataset_.get_data()
+        return self.dataset_.get_data()  # type: ignore
