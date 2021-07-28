@@ -77,7 +77,7 @@ class Transformer(BaseTokenizer):
             device = torch.device("cpu")
             print("WARNING: GPU not found.")
         else:
-            device = torch.device("gpu")
+            device = torch.device("cuda:0")
         return device
 
     def _create_data_loader(
