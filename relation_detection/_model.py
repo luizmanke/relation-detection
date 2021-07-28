@@ -34,6 +34,7 @@ class Model:
     def cross_validate(self, dataset: Dataset) -> None:
         self.results_: Dict[str, Any] = {"train": {}, "test": {}}
         self.samples_, self.labels_, self.groups_ = dataset.get_data()
+        self.predictions_ = np.zeros(len(self.samples_))
         for fold, (indexes_train, indexes_test) in tqdm(
                 enumerate(self._create_splits()), total=self.n_folds_):
             self._train(indexes_train, fold)
@@ -64,6 +65,7 @@ class Model:
 
         self._evaluate(labels_test, labels_pred_test, fold, "test")
         self.results_["test"][fold]["time"] = elapsed_time
+        self.predictions_[indexes] = labels_pred_test
 
     def _select_samples(self, indexes: np.ndarray) -> Tuple[List[dict], np.ndarray, List[str]]:
         selected_samples = [self.samples_[i] for i in indexes]
