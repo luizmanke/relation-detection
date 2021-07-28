@@ -57,8 +57,13 @@ class Model:
 
     def _test(self, indexes: np.ndarray, fold: int) -> None:
         samples_test, labels_test, _ = self._select_samples(indexes)
+
+        start_time = dt.now()
         labels_pred_test = self.model_.predict(samples_test)
+        elapsed_time = dt.now() - start_time
+
         self._evaluate(labels_test, labels_pred_test, fold, "test")
+        self.results_["test"][fold]["time"] = elapsed_time
 
     def _select_samples(self, indexes: np.ndarray) -> Tuple[List[dict], np.ndarray, List[str]]:
         selected_samples = [self.samples_[i] for i in indexes]
