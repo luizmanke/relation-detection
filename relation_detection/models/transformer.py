@@ -40,7 +40,7 @@ class Transformer(BaseTokenizer):
         samples_tokenized = self._tokenizer_transform(samples)
         data_loader = self._create_data_loader(samples_tokenized, y, shuffle=True)
         device = self._get_device()
-        self._create_model()
+        self._create_model(device)
         self._set_up_optimizers(data_loader)
         self._fit(data_loader, device)
 
@@ -74,8 +74,11 @@ class Transformer(BaseTokenizer):
     @staticmethod
     def _get_device() -> torch.device:
         if not torch.cuda.is_available():
-            raise Exception("CUDA is not available.")
-        return torch.device("cuda:0")
+            device = torch.device("cpu")
+            print("WARNING: GPU not found.")
+        else:
+            device = torch.device("gpu")
+        return device
 
     def _create_data_loader(
             self,
@@ -94,9 +97,9 @@ class Transformer(BaseTokenizer):
             collate_fn=self._collate_fn
         )
 
-    def _create_model(self) -> None:
+    def _create_model(self, device: torch.device) -> None:
         self.model = BaseTransformer(self.transformer_name)
-        self.model.to(0)
+        self.model.to(device=device)
         self.model._encoder.resize_token_embeddings(len(self.tokenizer))
 
     def _set_up_optimizers(self, data_loader: DataLoader) -> None:
