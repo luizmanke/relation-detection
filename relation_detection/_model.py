@@ -1,7 +1,7 @@
 import numpy as np
 from datetime import datetime as dt
 from sklearn import metrics
-from sklearn.model_selection import GroupShuffleSplit
+from sklearn.model_selection import GroupKFold
 from tqdm import tqdm
 from typing import Any, Dict, List, Tuple
 from . import Dataset
@@ -40,7 +40,7 @@ class Model:
             self._test(indexes_test, fold)
 
     def _create_splits(self) -> Any:
-        gss = GroupShuffleSplit(train_size=0.8, n_splits=self.n_folds_, random_state=42)
+        gss = GroupKFold(n_splits=self.n_folds_)
         return gss.split(self.samples_, self.labels_, self.groups_)
 
     def _train(self, indexes: np.ndarray, fold: int) -> None:
