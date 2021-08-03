@@ -5,9 +5,9 @@ from typing import List
 class BaseTokenizer:
 
     def __init__(self, transformer_name: str) -> None:
-        self.tokenizer = AutoTokenizer.from_pretrained(transformer_name)
-        self.tokenizer.add_tokens(["[E1]", "[E2]"])
-        self.max_sequence_length = 512
+        self.tokenizer_ = AutoTokenizer.from_pretrained(transformer_name)
+        self.tokenizer_.add_tokens(["[E1]", "[E2]"])
+        self.max_sequence_length_ = 512
 
     def transform(self, samples: List[dict]) -> List[dict]:
         new_samples = []
@@ -23,7 +23,7 @@ class BaseTokenizer:
     def _tokenize(self, words: List[str], index_1: int, index_2: int) -> dict:
         tokens: List[str] = []
         for i, word in enumerate(words):
-            tokens_wordpiece = self.tokenizer.tokenize(word)
+            tokens_wordpiece = self.tokenizer_.tokenize(word)
 
             # add entity marker token
             if i == index_1:
@@ -35,9 +35,9 @@ class BaseTokenizer:
             else:
                 tokens.extend(tokens_wordpiece)
 
-        tokens = tokens[:self.max_sequence_length - 2]
-        ids = self.tokenizer.convert_tokens_to_ids(tokens)
-        input_ids = self.tokenizer.build_inputs_with_special_tokens(ids)
+        tokens = tokens[:self.max_sequence_length_ - 2]
+        ids = self.tokenizer_.convert_tokens_to_ids(tokens)
+        input_ids = self.tokenizer_.build_inputs_with_special_tokens(ids)
 
         return {
             "tokens": input_ids,

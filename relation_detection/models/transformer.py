@@ -33,8 +33,8 @@ class Transformer(BaseTokenizer):
     GRADIENT_MAX_NORM = 1
 
     def __init__(self) -> None:
-        self.transformer_name = "neuralmind/bert-large-portuguese-cased"
-        BaseTokenizer.__init__(self, self.transformer_name)
+        self.transformer_name_ = "neuralmind/bert-large-portuguese-cased"
+        BaseTokenizer.__init__(self, self.transformer_name_)
 
     def fit(self, samples: List[dict], y: np.ndarray, groups: List[str]) -> None:
         samples_tokenized = self._tokenizer_transform(samples)
@@ -54,7 +54,7 @@ class Transformer(BaseTokenizer):
         predictions = []
         for batch in data_loader:
 
-            self.model.eval()
+            self.model_.eval()
             inputs = {
                 "tokens": batch[0].to(device),
                 "attention_mask": batch[1].to(device),
@@ -62,7 +62,7 @@ class Transformer(BaseTokenizer):
                 "indexes_2": batch[4].to(device),
             }
             with torch.no_grad():
-                logit = self.model(**inputs)[0]
+                logit = self.model_(**inputs)[0]
                 pred = torch.argmax(logit, dim=-1)
             predictions += pred.tolist()
 
@@ -98,16 +98,16 @@ class Transformer(BaseTokenizer):
         )
 
     def _create_model(self, device: torch.device) -> None:
-        self.model = BaseTransformer(self.transformer_name)
-        self.model.to(device=device)
-        self.model._encoder.resize_token_embeddings(len(self.tokenizer))
+        self.model_ = BaseTransformer(self.transformer_name_)
+        self.model_.to(device=device)
+        self.model_._encoder.resize_token_embeddings(len(self.tokenizer_))
 
     def _set_up_optimizers(self, data_loader: DataLoader) -> None:
         num_training_steps = int(
             len(data_loader) * self.N_EPOCHS // self.GRADIENT_N_ACCUMULATION_STEPS)
         num_warmup_steps = int(num_training_steps * self.WARMUP_RATIO)
         self._optimizer = AdamW(
-            self.model.parameters(), lr=self.LEARNING_RATE, eps=self.ADAM_EPSILON)
+            self.model_.parameters(), lr=self.LEARNING_RATE, eps=self.ADAM_EPSILON)
         self._scheduler = get_linear_schedule_with_warmup(
             self._optimizer,
             num_warmup_steps=num_warmup_steps,
@@ -118,11 +118,11 @@ class Transformer(BaseTokenizer):
     def _fit(self, data_loader: DataLoader, device: torch.device) -> None:
         num_steps = 0
         for _ in range(self.N_EPOCHS):
-            self.model.zero_grad()
+            self.model_.zero_grad()
             for step, batch in enumerate(data_loader):
 
                 # train model
-                self.model.train()
+                self.model_.train()
                 inputs = {
                     "tokens": batch[0].to(device),
                     "attention_mask": batch[1].to(device),
@@ -130,7 +130,7 @@ class Transformer(BaseTokenizer):
                     "indexes_1": batch[3].to(device),
                     "indexes_2": batch[4].to(device),
                 }
-                outputs = self.model(**inputs)
+                outputs = self.model_(**inputs)
 
                 # compute loss
                 loss = outputs[0] / self.GRADIENT_N_ACCUMULATION_STEPS
@@ -144,12 +144,12 @@ class Transformer(BaseTokenizer):
                     if self.GRADIENT_MAX_NORM > 0:
                         self._scaler.unscale_(self._optimizer)
                         torch.nn.utils.clip_grad_norm_(
-                            self.model.parameters(), self.GRADIENT_MAX_NORM)
+                            self.model_.parameters(), self.GRADIENT_MAX_NORM)
 
                     self._scaler.step(self._optimizer)
                     self._scaler.update()
                     self._scheduler.step()
-                    self.model.zero_grad()
+                    self.model_.zero_grad()
 
     @staticmethod
     def _collate_fn(batch: list) -> Tuple[
