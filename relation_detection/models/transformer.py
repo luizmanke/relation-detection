@@ -35,6 +35,8 @@ class Transformer(BaseTokenizer):
     def __init__(self) -> None:
         self.transformer_name_ = "neuralmind/bert-large-portuguese-cased"
         BaseTokenizer.__init__(self, self.transformer_name_)
+        if not torch.cuda.is_available():
+            print("WARNING: GPU not found.")
 
     def fit(self, samples: List[dict], y: np.ndarray, groups: List[str]) -> None:
         samples_tokenized = self._tokenizer_transform(samples)
@@ -77,7 +79,6 @@ class Transformer(BaseTokenizer):
     def _get_device() -> torch.device:
         if not torch.cuda.is_available():
             device = torch.device("cpu")
-            print("WARNING: GPU not found.")
         else:
             device = torch.device("cuda:0")
         return device
