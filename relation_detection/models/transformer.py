@@ -44,14 +44,17 @@ class Transformer(BaseTokenizer):
         self._set_up_optimizers(data_loader)
         self._fit(data_loader, device)
 
-    def predict(self, samples: List[dict]) -> np.ndarray:
+    def predict(self, samples: List[dict], return_proba: bool = False) -> np.ndarray:
         samples_tokenized = self._tokenizer_transform(samples)
         data_loader = self._create_data_loader(samples_tokenized)
         device = self._get_device()
-        return self._predict(data_loader, device)
+        predictions = self._predict_proba(data_loader, device)
+        if not return_proba:
+            predictions = predictions.argmax(axis=1)
+        return predictions
 
-    def _predict(self, data_loader: DataLoader, device: torch.device) -> np.ndarray:
-        predictions = []
+    def _predict_proba(self, data_loader: DataLoader, device: torch.device) -> np.ndarray:
+        predictions_proba = []
         for batch in data_loader:
 
             self.model_.eval()
@@ -63,10 +66,9 @@ class Transformer(BaseTokenizer):
             }
             with torch.no_grad():
                 logit = self.model_(**inputs)[0]
-                pred = torch.argmax(logit, dim=-1)
-            predictions += pred.tolist()
+            predictions_proba += nn.functional.softmax(logit, dim=-1).tolist()
 
-        return np.array(predictions)
+        return np.array(predictions_proba)
 
     def _tokenizer_transform(self, samples: List[dict]) -> List[dict]:
         return BaseTokenizer.transform(self, samples)
