@@ -2,6 +2,7 @@ import numpy as np
 import random
 import torch
 import torch.nn as nn
+import warnings
 from torch.cuda.amp import autocast, GradScaler
 from torch.utils.data import DataLoader
 from transformers import AutoModel, AutoConfig, logging
@@ -11,6 +12,7 @@ from .base.tokenizer import BaseTokenizer
 
 # disable warnings
 logging.set_verbosity_error()
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # set seeds
 SEED = 42
