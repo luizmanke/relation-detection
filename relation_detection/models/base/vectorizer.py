@@ -10,7 +10,9 @@ class BaseVectorizer:
             self.vectorizer = CountVectorizer()
         elif vectorizer_name == "spacy":
             if not spacy.util.is_package("pt_core_news_lg"):
+                print("\nDownloading spacy model...")
                 spacy.cli.download("pt_core_news_lg", False, False, "--quiet")  # type: ignore
+                print("")
             self.vectorizer = spacy.load("pt_core_news_lg")
         self.vectorizer_name = vectorizer_name
 
