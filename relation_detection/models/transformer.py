@@ -46,10 +46,19 @@ class Transformer(BaseTokenizer):
         device = self._get_device()
         self._create_model(device)
         self._set_up_optimizers(data_loader)
-        self._fit(data_loader, device)
+        # self._fit(data_loader, device)
 
-    def predict(self, samples: List[dict], return_proba: bool = False) -> np.ndarray:
-        samples_tokenized = self._tokenizer_transform(samples)
+    def predict(
+            self,
+            samples: List[dict],
+            return_proba: bool = False,
+            for_lime: bool = False
+    ) -> np.ndarray:
+
+        pad = True if for_lime else False
+        return_proba = True if for_lime else return_proba
+
+        samples_tokenized = self._tokenizer_transform(samples, pad)
         predictions = self._predict_proba(samples_tokenized)
         if not return_proba:
             predictions = predictions.argmax(axis=1)
@@ -74,8 +83,8 @@ class Transformer(BaseTokenizer):
 
         return np.array(predictions_proba)
 
-    def _tokenizer_transform(self, samples: List[dict]) -> List[dict]:
-        return BaseTokenizer.transform(self, samples)
+    def _tokenizer_transform(self, samples: List[dict], pad: bool = False) -> List[dict]:
+        return BaseTokenizer.transform(self, samples, pad)
 
     @staticmethod
     def _get_device() -> torch.device:
