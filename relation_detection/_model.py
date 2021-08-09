@@ -37,6 +37,14 @@ class Model:
         self._train(indexes_train, 0)
         self._test(indexes_test, 0)
 
+    def predict(
+            self,
+            samples: List[dict],
+            return_proba: bool = False,
+            for_lime: bool = False
+    ) -> np.ndarray:
+        return self.model_.predict(samples, return_proba, for_lime)
+
     def cross_validate(self, dataset: Dataset) -> None:
         self._train_setup(dataset)
         for fold, (indexes_train, indexes_test) in tqdm(
