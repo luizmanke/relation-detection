@@ -46,23 +46,18 @@ class Transformer(BaseTokenizer):
         device = self._get_device()
         self._create_model(device)
         self._set_up_optimizers(data_loader)
-        # self._fit(data_loader, device)
+        self._fit(data_loader, device)
 
     def predict(
             self,
             samples: List[dict],
-            return_proba: bool = False,
             for_lime: bool = False
-    ) -> np.ndarray:
-
+    ) -> Tuple[np.ndarray, np.ndarray]:
         pad = True if for_lime else False
-        return_proba = True if for_lime else return_proba
-
         samples_tokenized = self._tokenizer_transform(samples, pad)
-        predictions = self._predict_proba(samples_tokenized)
-        if not return_proba:
-            predictions = predictions.argmax(axis=1)
-        return predictions
+        predictions_proba = self._predict_proba(samples_tokenized)
+        predictions = predictions_proba.argmax(axis=1)
+        return predictions, predictions_proba
 
     def _predict_proba(self, samples_tokenized: List[dict]) -> np.ndarray:
         data_loader = self._create_data_loader(samples_tokenized)

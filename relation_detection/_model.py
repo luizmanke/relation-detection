@@ -43,7 +43,11 @@ class Model:
             return_proba: bool = False,
             for_lime: bool = False
     ) -> np.ndarray:
-        return self.model_.predict(samples, return_proba, for_lime)
+        predictions, predictions_proba = self.model_.predict(samples, for_lime)
+        if return_proba:
+            return predictions_proba
+        else:
+            return predictions
 
     def cross_validate(self, dataset: Dataset) -> None:
         self._train_setup(dataset)
@@ -56,6 +60,7 @@ class Model:
         self.results_: Dict[str, Any] = {"train": {}, "test": {}}
         self.samples_, self.labels_, self.groups_ = dataset.get_data()
         self.predictions_ = np.zeros(len(self.samples_))
+        self.predictions_proba_ = np.zeros((len(self.samples_), 2))
 
     def _create_splits(self) -> Any:
         gss = GroupKFold(n_splits=self.n_folds_)
@@ -69,7 +74,7 @@ class Model:
         self.model_.fit(samples_train, labels_train, groups_train)
         elapsed_time = dt.now() - start_time
 
-        labels_pred_train = self.model_.predict(samples_train)
+        labels_pred_train, _ = self.model_.predict(samples_train)
         self._evaluate(labels_train, labels_pred_train, fold, "train")
         self.results_["train"][fold]["time"] = elapsed_time
 
@@ -77,12 +82,13 @@ class Model:
         samples_test, labels_test, _ = self._select_samples(indexes)
 
         start_time = dt.now()
-        labels_pred_test = self.model_.predict(samples_test)
+        labels_pred_test, labels_proba_test = self.model_.predict(samples_test)
         elapsed_time = dt.now() - start_time
 
         self._evaluate(labels_test, labels_pred_test, fold, "test")
         self.results_["test"][fold]["time"] = elapsed_time
         self.predictions_[indexes] = labels_pred_test
+        self.predictions_proba_[indexes] = labels_proba_test
 
     def _select_samples(self, indexes: np.ndarray) -> Tuple[List[dict], np.ndarray, List[str]]:
         selected_samples = [self.samples_[i] for i in indexes]
