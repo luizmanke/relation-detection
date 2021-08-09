@@ -50,14 +50,14 @@ class Transformer(BaseTokenizer):
 
     def predict(self, samples: List[dict], return_proba: bool = False) -> np.ndarray:
         samples_tokenized = self._tokenizer_transform(samples)
-        data_loader = self._create_data_loader(samples_tokenized)
-        device = self._get_device()
-        predictions = self._predict_proba(data_loader, device)
+        predictions = self._predict_proba(samples_tokenized)
         if not return_proba:
             predictions = predictions.argmax(axis=1)
         return predictions
 
-    def _predict_proba(self, data_loader: DataLoader, device: torch.device) -> np.ndarray:
+    def _predict_proba(self, samples_tokenized: List[dict]) -> np.ndarray:
+        data_loader = self._create_data_loader(samples_tokenized)
+        device = self._get_device()
         predictions_proba = []
         for batch in data_loader:
 
