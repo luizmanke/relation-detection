@@ -31,14 +31,23 @@ class Model:
         assert model_name in self.available_methods_
         self.model_name_ = model_name
 
+    def train(self, dataset: Dataset) -> None:
+        self._train_setup(dataset)
+        indexes_train, indexes_test = next(self._create_splits())
+        self._train(indexes_train, 0)
+        self._test(indexes_test, 0)
+
     def cross_validate(self, dataset: Dataset) -> None:
-        self.results_: Dict[str, Any] = {"train": {}, "test": {}}
-        self.samples_, self.labels_, self.groups_ = dataset.get_data()
-        self.predictions_ = np.zeros(len(self.samples_))
+        self._train_setup(dataset)
         for fold, (indexes_train, indexes_test) in tqdm(
                 enumerate(self._create_splits()), total=self.n_folds_):
             self._train(indexes_train, fold)
             self._test(indexes_test, fold)
+
+    def _train_setup(self, dataset: Dataset) -> None:
+        self.results_: Dict[str, Any] = {"train": {}, "test": {}}
+        self.samples_, self.labels_, self.groups_ = dataset.get_data()
+        self.predictions_ = np.zeros(len(self.samples_))
 
     def _create_splits(self) -> Any:
         gss = GroupKFold(n_splits=self.n_folds_)
