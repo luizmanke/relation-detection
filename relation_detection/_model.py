@@ -56,11 +56,15 @@ class Model:
             self._train(indexes_train, fold)
             self._test(indexes_test, fold)
 
+    def get_indexes_of(self, label: str, sort: bool = True) -> np.ndarray:
+        condition = self._get_condition(label)
+        return self._get_indexes(condition, sort)
+
     def _train_setup(self, dataset: Dataset) -> None:
         self.results_: Dict[str, Any] = {"train": {}, "test": {}}
         self.samples_, self.labels_, self.groups_ = dataset.get_data()
-        self.predictions_ = np.zeros(len(self.samples_))
-        self.predictions_proba_ = np.zeros((len(self.samples_), 2))
+        self.predictions_ = np.empty(len(self.samples_))
+        self.predictions_proba_ = np.empty((len(self.samples_), 2))
 
     def _create_splits(self) -> Any:
         gss = GroupKFold(n_splits=self.n_folds_)
@@ -111,3 +115,27 @@ class Model:
             "f1": round(metrics.f1_score(labels_true, labels_pred), 4),
             "mcc": round(metrics.matthews_corrcoef(labels_true, labels_pred), 4)
         }
+
+    def _get_condition(self, label: str) -> np.ndarray:
+        assert label in ["TP", "TN", "FP", "FN"]
+
+        if label[0] == "T":
+            condition_1 = self.predictions_ == self.labels_
+        elif label[0] == "F":
+            condition_1 = self.predictions_ != self.labels_
+
+        if label[1] == "P":
+            condition_2 = self.predictions_ == 1
+        elif label[1] == "N":
+            condition_2 = self.predictions_ == 0
+
+        return condition_1 & condition_2
+
+    def _get_indexes(self, condition: np.ndarray, sort: bool) -> np.ndarray:
+        indexes = np.arange(len(self.predictions_))
+        indexes_selected = indexes[condition]
+        if sort:
+            predictions_proba_selected = self.predictions_proba_[condition]
+            sorted_args_selected = predictions_proba_selected.argsort()
+            indexes_selected = indexes_selected[sorted_args_selected]
+        return indexes_selected
