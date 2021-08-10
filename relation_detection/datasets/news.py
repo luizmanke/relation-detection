@@ -1,12 +1,15 @@
+import nltk
 import numpy as np
 import pandas as pd
 from typing import List, Tuple
+from ..utils import download_nltk_model
 
 
 class News:
 
     def __init__(self):
         self.file_name_ = "News.csv"
+        download_nltk_model()
 
     def load(self) -> None:
         if not hasattr(self, "samples"):
@@ -47,7 +50,7 @@ class News:
                 if span == "":
                     continue
                 if span not in [sample["name"], sample["keyword"]]:
-                    sample["tokens"].extend(span.split())
+                    sample["tokens"].extend(nltk.word_tokenize(span, language="portuguese"))
                 else:
                     sample["tokens"].append(span)
 

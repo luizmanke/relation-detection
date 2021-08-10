@@ -1,9 +1,11 @@
+import nltk
 import numpy as np
 import os
 import re
 import requests
 from imblearn.under_sampling import RandomUnderSampler
 from typing import Any, Dict, List, Tuple
+from ..utils import download_nltk_model
 
 
 class DBpedia:
@@ -11,6 +13,7 @@ class DBpedia:
     def __init__(self):
         self.file_dir_ = "/tmp/relation_detection"
         self.file_name_ = "DBpediaRelations-PT-0.2.txt"
+        download_nltk_model()
 
     def load(self) -> None:
         if not hasattr(self, "samples"):
@@ -109,7 +112,7 @@ class DBpedia:
                 if span == "":
                     continue
                 if span not in [sample["ENTITY1"], sample["ENTITY2"]]:
-                    sample["tokens"].extend(span.split())
+                    sample["tokens"].extend(nltk.word_tokenize(span, language="portuguese"))
                 else:
                     sample["tokens"].append(span)
 
