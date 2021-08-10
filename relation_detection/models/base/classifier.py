@@ -11,4 +11,4 @@ class BaseClassifier(RandomForestClassifier):
         RandomForestClassifier.fit(self, x, y)
 
     def predict(self, x: np.ndarray) -> np.ndarray:
-        return RandomForestClassifier.predict(self, x)
+        return RandomForestClassifier.predict_proba(self, x)

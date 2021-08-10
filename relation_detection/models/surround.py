@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List
+from typing import List, Tuple
 from .base.classifier import BaseClassifier
 from .base.vectorizer import BaseVectorizer
 
@@ -11,17 +11,26 @@ class Surround(BaseVectorizer, BaseClassifier):
         BaseClassifier.__init__(self, **kwargs)
 
     def fit(  # type: ignore[override]
-            self, samples: List[dict], y: np.ndarray, groups: List[str]
+            self,
+            samples: List[dict],
+            y: np.ndarray,
+            groups: List[str]
     ) -> None:
         sentences = self._get_surroundings(samples)
         self._vectorizer_fit(sentences)
         x = self._vectorizer_transform(sentences)
         BaseClassifier.fit(self, x, y)
 
-    def predict(self, samples: List[dict]) -> np.ndarray:  # type: ignore[override]
+    def predict(  # type: ignore[override]
+            self,
+            samples: List[dict],
+            for_lime: bool = False
+    ) -> Tuple[np.ndarray, np.ndarray]:
         sentences = self._get_surroundings(samples)
         x = self._vectorizer_transform(sentences)
-        return BaseClassifier.predict(self, x)
+        predictions_proba = BaseClassifier.predict(self, x)
+        predictions = predictions_proba.argmax(axis=1)
+        return predictions, predictions_proba
 
     @staticmethod
     def _get_surroundings(samples: List[dict]) -> List[str]:

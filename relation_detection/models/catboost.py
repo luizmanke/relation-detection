@@ -16,10 +16,16 @@ class CatBoost(CatBoostClassifier):
         df_train, df_test = self._train_test_split(df, groups)
         self._fit_model(df_train, df_test)
 
-    def predict(self, samples: List[dict]) -> np.ndarray:
+    def predict(
+            self,
+            samples: List[dict],
+            for_lime: bool = False
+    ) -> Tuple[np.ndarray, np.ndarray]:
         sentences = self._get_surroundings(samples)
         df = self._to_pandas(sentences)
-        return CatBoostClassifier.predict(self, df)
+        predictions_proba = CatBoostClassifier.predict_proba(self, df)
+        predictions = predictions_proba.argmax(axis=1)
+        return predictions, predictions_proba
 
     @staticmethod
     def _get_surroundings(samples: List[dict]) -> List[dict]:
