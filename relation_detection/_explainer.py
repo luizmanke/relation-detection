@@ -1,5 +1,6 @@
 import nltk
 import numpy as np
+from lime.submodular_pick import SubmodularPick
 from lime.lime_text import LimeTextExplainer
 from typing import Any, Callable, List, Tuple
 from . import utils
@@ -10,17 +11,35 @@ class Explainer:
     def __init__(self):
         utils.download_nltk_model()
 
-    def explain_with_lime(self, model: Any, sample: dict) -> None:
+    def explain_sample(self, model: Any, sample: dict) -> None:
         original_tokens = self._get_original_tokens(sample)
         index_1, index_2 = self._find_entities_index(original_tokens)
-        sentence = self._create_sentence_without_entities(sample)
 
         # define nested function
         def _nested_predict(sentences: List[str]) -> np.ndarray:
             samples = self._recreate_samples(sentences, index_1, index_2)
             return model.predict(samples, return_proba=True, for_lime=True)
 
-        self._explain_with_lime(sentence, _nested_predict)
+        sentence = self._create_sentence_without_entities(sample)
+        self._explain_sample(sentence, _nested_predict)
+
+    def explain_model(self, model: Any, samples: List[dict]) -> None:
+        globals()["i"] = -1
+        lookup_table = [
+            self._find_entities_index(
+                self._get_original_tokens(sample)
+            ) for sample in samples
+        ]
+
+        # define nested function
+        def _nested_predict(sentences: List[str]) -> np.ndarray:
+            globals()["i"] += 1
+            index_1, index_2 = lookup_table[globals()["i"]]
+            samples = self._recreate_samples(sentences, index_1, index_2)
+            return model.predict(samples, return_proba=True, for_lime=True)
+
+        sentences = [self._create_sentence_without_entities(sample) for sample in samples]
+        self._explain_model(sentences, _nested_predict)
 
     def _get_original_tokens(self, sample: dict) -> List[str]:
         sample = dict(sample)
@@ -58,23 +77,39 @@ class Explainer:
             })
         return samples
 
-    def _explain_with_lime(self, sentence: str, predict_function: Callable) -> None:
+    def _explain_sample(self, sentence: str, predict_function: Callable) -> None:
+        explainer = self._create_explainer()
+        lime_values = explainer.explain_instance(
+            text_instance=sentence,
+            classifier_fn=predict_function
+        )
+        lime_values.show_in_notebook(
+            text=True,
+            labels=(lime_values.available_labels()[0],)
+        )
 
-        explainer = LimeTextExplainer(
+    def _explain_model(self, sentences: List[str], predict_function: Callable) -> None:
+        explainer = self._create_explainer()
+        picks = SubmodularPick(
+            explainer,
+            sentences,
+            predict_function,
+            method="full",
+            num_exps_desired=2
+        )
+        for lime_values in picks.sp_explanations:
+            lime_values.show_in_notebook(
+                text=True,
+                labels=(lime_values.available_labels()[0],)
+            )
+
+    def _create_explainer(self) -> LimeTextExplainer:
+        return LimeTextExplainer(
             class_names=["not related", "related"],
             split_expression=self._tokenize_to_words,
             mask_string="[PAD]",
             bow=False
         )
-
-        lime_values = explainer.explain_instance(
-            text_instance=sentence,
-            classifier_fn=predict_function,
-            num_samples=10,
-            num_features=len(self._tokenize_to_words(sentence))
-        )
-
-        lime_values.show_in_notebook(text=True, labels=(lime_values.available_labels()[0],))
 
     def _tokenize_to_words(self, sentence: str) -> List[str]:
         KNOWN_TOKENS = ["E1", "E2", "PAD"]
