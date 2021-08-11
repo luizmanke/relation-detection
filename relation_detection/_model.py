@@ -135,7 +135,7 @@ class Model:
         indexes = np.arange(len(self.predictions_))
         indexes_selected = indexes[condition]
         if sort:
-            predictions_proba_selected = self.predictions_proba_[condition]
+            predictions_proba_selected = self.predictions_proba_[condition, 0]
             sorted_args_selected = predictions_proba_selected.argsort()
             indexes_selected = indexes_selected[sorted_args_selected]
         return indexes_selected
