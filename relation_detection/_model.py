@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from datetime import datetime as dt
 from sklearn import metrics
 from sklearn.model_selection import GroupKFold
@@ -58,6 +59,22 @@ class Model:
     def get_indexes_of(self, label: str, sort: bool = True) -> np.ndarray:
         condition = self._get_condition(label)
         return self._get_indexes(condition, sort)
+
+    def get_results(self) -> pd.DataFrame:
+        results: dict = {}
+
+        if hasattr(self, "results_"):
+            for split, first_level in self.results_.items():
+                for fold, second_level in first_level.items():
+                    for metric, score in second_level.items():
+                        key = (split, metric)
+                        if key not in results:
+                            results[key] = []
+                        results[key].append(score)
+
+        df = pd.DataFrame(results)
+        df.index.name = "fold"
+        return df.transpose()
 
     def _train_setup(self, dataset: Any) -> None:
         self.results_: Dict[str, Any] = {"train": {}, "test": {}}
