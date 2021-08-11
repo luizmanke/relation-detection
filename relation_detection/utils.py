@@ -4,7 +4,7 @@ import nltk
 def download_nltk_model():
     try:
         nltk.data.find("tokenizers/punkt")
-    except IndexError:
+    except Exception:
         print("\nDownloading nltk model...")
         nltk.download("punkt")
         print("")
