@@ -4,7 +4,6 @@ from sklearn import metrics
 from sklearn.model_selection import GroupKFold
 from tqdm import tqdm
 from typing import Any, Dict, List, Tuple
-from . import Dataset
 from .models.between import Between
 from .models.catboost import CatBoost
 from .models.surround import Surround
@@ -31,7 +30,7 @@ class Model:
         assert model_name in self.available_methods_
         self.model_name_ = model_name
 
-    def train(self, dataset: Dataset) -> None:
+    def train(self, dataset: Any) -> None:
         self._train_setup(dataset)
         indexes_train, indexes_test = next(self._create_splits())
         self._train(indexes_train, 0)
@@ -49,7 +48,7 @@ class Model:
         else:
             return predictions
 
-    def cross_validate(self, dataset: Dataset) -> None:
+    def cross_validate(self, dataset: Any) -> None:
         self._train_setup(dataset)
         for fold, (indexes_train, indexes_test) in tqdm(
                 enumerate(self._create_splits()), total=self.n_folds_):
@@ -60,7 +59,7 @@ class Model:
         condition = self._get_condition(label)
         return self._get_indexes(condition, sort)
 
-    def _train_setup(self, dataset: Dataset) -> None:
+    def _train_setup(self, dataset: Any) -> None:
         self.results_: Dict[str, Any] = {"train": {}, "test": {}}
         self.samples_, self.labels_, self.groups_ = dataset.get_data()
         self.predictions_ = np.empty(len(self.samples_))
