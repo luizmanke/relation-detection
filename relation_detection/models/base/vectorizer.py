@@ -1,6 +1,7 @@
 import numpy as np
 import spacy
 from sklearn.feature_extraction.text import CountVectorizer
+from ...utils import download_spacy_model
 
 
 class BaseVectorizer:
@@ -9,10 +10,7 @@ class BaseVectorizer:
         if vectorizer_name == "count":
             self.vectorizer = CountVectorizer()
         elif vectorizer_name == "spacy":
-            if not spacy.util.is_package("pt_core_news_lg"):
-                print("\nDownloading spacy model...")
-                spacy.cli.download("pt_core_news_lg", False, False, "--quiet")  # type: ignore
-                print("")
+            download_spacy_model()
             self.vectorizer = spacy.load("pt_core_news_lg")
         self.vectorizer_name = vectorizer_name
 
