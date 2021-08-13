@@ -1,12 +1,28 @@
+import math
+import nltk
+import numpy as np
 import pandas as pd
 import re
+import spacy
+from collections import Counter
+from sklearn.decomposition import PCA
 from typing import List
+from ...utils import download_nltk_model, download_spacy_model
 
 
 class BaseEngineering:
 
     def __init__(self) -> None:
-        pass
+        download_nltk_model()
+        download_spacy_model()
+        self.stopwords_ = nltk.corpus.stopwords.words('portuguese')
+        self.spacy_model_ = spacy.load("pt_core_news_lg")
+        self.pca_model_ = PCA(n_components=2)
+
+    def fit(self, samples: List[dict]) -> None:
+        tokens_list = [self._get_tokens_with_mask(sample) for sample in samples]
+        self._fit_idf(tokens_list)
+        self._fit_pca(samples)
 
     def get_features(self, samples: List[dict]) -> pd.DataFrame:
         features = []
@@ -14,12 +30,51 @@ class BaseEngineering:
 
             new_features = {}
             for method_name in dir(self):
-                if method_name[:9] == "_compute_":
+                if method_name == "_compute_principal_components":
+                    principal_components = self._compute_principal_components(sample)
+                    new_features["principal_component_1"] = principal_components[0]
+                    new_features["principal_component_1"] = principal_components[1]
+                elif method_name[:9] == "_compute_":
                     method = getattr(self, method_name)
                     new_features[method_name[9:]] = method(sample)
             features.append(new_features)
 
         return pd.DataFrame(features)
+
+    @staticmethod
+    def _get_tokens_with_mask(sample: dict) -> List[str]:
+        tokens = [item for item in sample["tokens"]]
+        tokens[sample["index_1"]] = "[mask]"
+        tokens[sample["index_2"]] = "[mask]"
+        return tokens
+
+    def _fit_idf(self, tokens_list: List[list]) -> None:
+        counter: dict = Counter()
+        for tokens in tokens_list:
+            for ngram in self._get_ngrams(tokens):
+                counter[ngram] += 1
+        self.idf_ = {}
+        for ngram, count in counter.items():
+            self.idf_[ngram] = math.log(float(len(tokens_list)) / count)
+
+    @staticmethod
+    def _get_ngrams(tokens: List[str], n: int = 1) -> set:
+        ngrams = set()
+        for i in range(len(tokens)):
+            if i+n <= len(tokens):
+                words = tuple([word.lower() for word in tokens[i:i+n]])
+                if "[mask]" not in words:
+                    ngrams.add(words)
+        return ngrams
+
+    def _fit_pca(self, samples: List[dict]) -> None:
+        x = []
+        for sample in samples:
+            before = self._get_sentence(sample, "before")
+            between = self._get_sentence(sample, "between")
+            after = self._get_sentence(sample, "after")
+            x.append(self.spacy_model_(" ".join([before, between, after])).vector)
+        self.pca_model_.fit(np.array(x))
 
     def _compute_length_before_entities(self, sample: dict) -> int:
         sentence = self._get_sentence(sample, "before")
@@ -131,16 +186,57 @@ class BaseEngineering:
         sentence = self._get_sentence(sample, "after")
         return len(re.findall("'", sentence))
 
+    def _compute_n_stopwords_before_entities(self, sample: dict) -> int:
+        tokens = self._get_tokens(sample, "before")
+        return len([token for token in tokens if token.lower() in self.stopwords_])
+
+    def _compute_n_stopwords_between_entities(self, sample: dict) -> int:
+        tokens = self._get_tokens(sample, "between")
+        return len([token for token in tokens if token.lower() in self.stopwords_])
+
+    def _compute_n_stopwords_after_entities(self, sample: dict) -> int:
+        tokens = self._get_tokens(sample, "after")
+        return len([token for token in tokens if token.lower() in self.stopwords_])
+
+    def _compute_idf_before_entities(self, sample: dict) -> float:
+        tokens = self._get_tokens(sample, "before")
+        ngrams = self._get_ngrams(tokens)
+        idfs = [self.idf_[item] for item in ngrams if item in self.idf_]
+        return np.mean(idfs) if idfs else 0
+
+    def _compute_idf_between_entities(self, sample: dict) -> float:
+        tokens = self._get_tokens(sample, "between")
+        ngrams = self._get_ngrams(tokens)
+        idfs = [self.idf_[item] for item in ngrams if item in self.idf_]
+        return np.mean(idfs) if idfs else 0
+
+    def _compute_idf_after_entities(self, sample: dict) -> float:
+        tokens = self._get_tokens(sample, "after")
+        ngrams = self._get_ngrams(tokens)
+        idfs = [self.idf_[item] for item in ngrams if item in self.idf_]
+        return np.mean(idfs) if idfs else 0
+
+    def _compute_principal_components(self, sample: dict) -> np.ndarray:
+        before = self._get_sentence(sample, "before")
+        between = self._get_sentence(sample, "between")
+        after = self._get_sentence(sample, "after")
+        doc = self.spacy_model_(" ".join([before, between, after]))
+        return self.pca_model_.transform(doc.vector.reshape(1, -1))[0]
+
     def _get_sentence(self, sample: dict, location: str) -> str:
+        tokens = self._get_tokens(sample, location)
+        return " ".join(tokens)
+
+    def _get_tokens(self, sample: dict, location: str) -> List[str]:
         indexes = self._get_sorted_indexes(sample)
         if location == "before":
-            sentence = " ".join(sample["tokens"][:indexes[0]])
+            tokens = sample["tokens"][:indexes[0]]
         elif location == "between":
-            sentence = " ".join(sample["tokens"][indexes[0]+1:indexes[1]])
+            tokens = sample["tokens"][indexes[0]+1:indexes[1]]
         elif location == "after":
-            sentence = " ".join(sample["tokens"][indexes[1]+1:])
-        return sentence
+            tokens = sample["tokens"][indexes[1]+1:]
+        return tokens
 
     @staticmethod
-    def _get_sorted_indexes(sample: dict) -> list:
+    def _get_sorted_indexes(sample: dict) -> List[int]:
         return sorted([sample["index_1"], sample["index_2"]])

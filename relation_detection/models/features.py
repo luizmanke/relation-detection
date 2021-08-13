@@ -16,6 +16,7 @@ class Features(BaseEngineering, BaseClassifier):
             y: np.ndarray,
             groups: List[str]
     ) -> None:
+        BaseEngineering.fit(self, samples)
         x = BaseEngineering.get_features(self, samples)
         BaseClassifier.fit(self, x, y)
 
