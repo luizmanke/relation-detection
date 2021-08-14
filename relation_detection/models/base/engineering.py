@@ -36,7 +36,7 @@ class BaseEngineering:
             for method_name in dir(self):
                 if method_name == "_compute_principal_components":
                     principal_components = self._compute_principal_components(sample)
-                    new_features["principal_component_1"] = principal_components[0]
+                    new_features["principal_component_0"] = principal_components[0]
                     new_features["principal_component_1"] = principal_components[1]
                 elif method_name[:9] == "_compute_":
                     method = getattr(self, method_name)
