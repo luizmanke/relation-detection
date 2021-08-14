@@ -1,6 +1,8 @@
+import joblib
 import math
 import nltk
 import numpy as np
+import os
 import pandas as pd
 import re
 import spacy
@@ -18,6 +20,8 @@ class BaseEngineering:
         self.stopwords_ = nltk.corpus.stopwords.words('portuguese')
         self.spacy_model_ = spacy.load("pt_core_news_lg")
         self.pca_model_ = PCA(n_components=2)
+        self.pos_model_ = joblib.load(f"{os.path.dirname(__file__)}/POS_tagger_brill.pkl")
+        self.negative_adverbs_ = ["não", "nem", "tampouco", "nunca", "jamais", "nada"]
 
     def fit(self, samples: List[dict]) -> None:
         tokens_list = [self._get_tokens_with_mask(sample) for sample in samples]
@@ -222,6 +226,58 @@ class BaseEngineering:
         after = self._get_sentence(sample, "after")
         doc = self.spacy_model_(" ".join([before, between, after]))
         return self.pca_model_.transform(doc.vector.reshape(1, -1))[0]
+
+    def _compute_n_prop_names_before_entities(self, sample: dict) -> int:
+        tokens = self._get_tokens(sample, "before")
+        tokens_tagged = self.pos_model_.tag(tokens)
+        return self._count_tags(tokens_tagged, "NPROP")
+
+    def _compute_n_prop_names_between_entities(self, sample: dict) -> int:
+        tokens = self._get_tokens(sample, "between")
+        tokens_tagged = self.pos_model_.tag(tokens)
+        return self._count_tags(tokens_tagged, "NPROP")
+
+    def _compute_n_prop_names_after_entities(self, sample: dict) -> int:
+        tokens = self._get_tokens(sample, "after")
+        tokens_tagged = self.pos_model_.tag(tokens)
+        return self._count_tags(tokens_tagged, "NPROP")
+
+    def _compute_n_pronouns_before_entities(self, sample: dict) -> int:
+        tokens = self._get_tokens(sample, "before")
+        tokens_tagged = self.pos_model_.tag(tokens)
+        return self._count_tags(tokens_tagged, "PROPESS")
+
+    def _compute_n_pronouns_between_entities(self, sample: dict) -> int:
+        tokens = self._get_tokens(sample, "between")
+        tokens_tagged = self.pos_model_.tag(tokens)
+        return self._count_tags(tokens_tagged, "PROPESS")
+
+    def _compute_n_pronouns_after_entities(self, sample: dict) -> int:
+        tokens = self._get_tokens(sample, "after")
+        tokens_tagged = self.pos_model_.tag(tokens)
+        return self._count_tags(tokens_tagged, "PROPESS")
+
+    def _compute_n_neg_adverbs_before_entities(self, sample: dict) -> int:
+        tokens = self._get_tokens(sample, "before")
+        return len([token for token in tokens if token.lower() in self.negative_adverbs_])
+
+    def _compute_n_neg_adverbs_between_entities(self, sample: dict) -> int:
+        tokens = self._get_tokens(sample, "between")
+        return len([token for token in tokens if token.lower() in self.negative_adverbs_])
+
+    def _compute_n_neg_adverbs_after_entities(self, sample: dict) -> int:
+        tokens = self._get_tokens(sample, "after")
+        return len([token for token in tokens if token.lower() in self.negative_adverbs_])
+
+    @staticmethod
+    def _count_tags(tokens_tagged: List[tuple], search: str) -> int:
+        count = 0
+        previous_tag = ""
+        for _, tag in tokens_tagged:
+            if tag == search and previous_tag != search:
+                count += 1
+            previous_tag = tag
+        return count
 
     def _get_sentence(self, sample: dict, location: str) -> str:
         tokens = self._get_tokens(sample, location)
