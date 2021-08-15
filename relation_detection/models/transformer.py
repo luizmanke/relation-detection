@@ -86,9 +86,10 @@ class Transformer(BaseEngineering, BaseTokenizer):
                 "tokens": batch[0].to(device),
                 "attention_mask": batch[1].to(device),
                 "indexes_1": batch[3].to(device),
-                "indexes_2": batch[4].to(device),
-                "features": batch[5].to(device)
+                "indexes_2": batch[4].to(device)
             }
+            if batch[5] is not None:
+                inputs["features"] = batch[5].to(device)
             with torch.no_grad():
                 logit = self.model_(**inputs)[0]
             predictions_proba += nn.functional.softmax(logit, dim=-1).tolist()
@@ -170,9 +171,10 @@ class Transformer(BaseEngineering, BaseTokenizer):
                     "attention_mask": batch[1].to(device),
                     "labels": batch[2].to(device),
                     "indexes_1": batch[3].to(device),
-                    "indexes_2": batch[4].to(device),
-                    "features": batch[5].to(device)
+                    "indexes_2": batch[4].to(device)
                 }
+                if batch[5] is not None:
+                    inputs["features"] = batch[5].to(device)
                 outputs = self.model_(**inputs)
 
                 # compute loss
