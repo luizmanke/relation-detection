@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime as dt
 from sklearn import metrics
 from sklearn.model_selection import GroupKFold
+from termcolor import colored
 from tqdm import tqdm
 from typing import Any, Dict, List, Tuple
 from .models.between import Between
@@ -10,6 +11,7 @@ from .models.catboost import CatBoost
 from .models.features import Features
 from .models.surround import Surround
 from .models.transformer import Transformer
+from .utils import print_sentence
 
 
 class Model:
@@ -58,9 +60,9 @@ class Model:
             self._train(indexes_train, fold)
             self._test(indexes_test, fold)
 
-    def get_indexes_of(self, label: str, sort: bool = True) -> np.ndarray:
+    def get_indexes_of(self, label: str, order: str = "desc") -> np.ndarray:
         condition = self._get_condition(label)
-        return self._get_indexes(condition, sort)
+        return self._get_indexes(condition, order)
 
     def get_results(self) -> pd.DataFrame:
         results: dict = {}
@@ -77,6 +79,12 @@ class Model:
         df = pd.DataFrame(results)
         df.index.name = "fold"
         return df.transpose()
+
+    def print_sentence(self, index: int) -> None:
+        sample = {key: value for key, value in self.samples_[index].items()}
+        print("true label:", self.labels_[index])
+        print("prediction:", self.predictions_proba_[index][1])
+        print_sentence(sample)
 
     def _train_setup(self, dataset: Any) -> None:
         self.results_: Dict[str, Any] = {"train": {}, "test": {}}
@@ -149,11 +157,11 @@ class Model:
 
         return condition_1 & condition_2
 
-    def _get_indexes(self, condition: np.ndarray, sort: bool) -> np.ndarray:
+    def _get_indexes(self, condition: np.ndarray, order: str) -> np.ndarray:
         indexes = np.arange(len(self.predictions_))
         indexes_selected = indexes[condition]
-        if sort:
-            predictions_proba_selected = self.predictions_proba_[condition, 0]
-            sorted_args_selected = predictions_proba_selected.argsort()
-            indexes_selected = indexes_selected[sorted_args_selected]
+        predictions_proba_selected = self.predictions_proba_[condition, 1]
+        sorted_args_selected = predictions_proba_selected.argsort()
+        indexes_selected = indexes_selected[sorted_args_selected]
+        indexes_selected = indexes_selected[::-1] if order == "desc" else indexes_selected
         return indexes_selected
