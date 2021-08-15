@@ -8,7 +8,7 @@ from .base.vectorizer import BaseVectorizer
 class Surround(BaseEngineering, BaseVectorizer, BaseClassifier):
 
     def __init__(self, **kwargs):
-        self.add_features_ = True
+        self.add_features_ = False
         BaseEngineering.__init__(self)
         BaseVectorizer.__init__(self, vectorizer_name="spacy")
         BaseClassifier.__init__(self, **kwargs)

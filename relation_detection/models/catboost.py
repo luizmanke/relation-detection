@@ -9,9 +9,9 @@ from .base.engineering import BaseEngineering
 class CatBoost(BaseEngineering, CatBoostClassifier):
 
     def __init__(self):
+        self.add_features_ = False
         BaseEngineering.__init__(self)
         CatBoostClassifier.__init__(self, random_state=42)
-        self.add_features_ = True
 
     def fit(  # type: ignore[override]
             self,

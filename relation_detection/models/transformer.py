@@ -36,7 +36,7 @@ class Transformer(BaseEngineering, BaseTokenizer):
     GRADIENT_MAX_NORM = 1
 
     def __init__(self) -> None:
-        self.add_features_ = True
+        self.add_features_ = False
         self.transformer_name_ = "neuralmind/bert-large-portuguese-cased"
         BaseEngineering.__init__(self)
         BaseTokenizer.__init__(self, self.transformer_name_)
