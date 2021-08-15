@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from transformers import AutoModel, AutoConfig, logging
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 from typing import List, Optional, Tuple
+from .base.engineering import BaseEngineering
 from .base.tokenizer import BaseTokenizer
 
 # disable warnings
@@ -23,7 +24,7 @@ if torch.cuda.device_count() > 0 and torch.cuda.is_available():
     torch.cuda.manual_seed_all(SEED)
 
 
-class Transformer(BaseTokenizer):
+class Transformer(BaseEngineering, BaseTokenizer):
 
     # hyperparameters
     BATCH_SIZE = 32
@@ -35,16 +36,29 @@ class Transformer(BaseTokenizer):
     GRADIENT_MAX_NORM = 1
 
     def __init__(self) -> None:
+        self.add_features_ = True
         self.transformer_name_ = "neuralmind/bert-large-portuguese-cased"
+        BaseEngineering.__init__(self)
         BaseTokenizer.__init__(self, self.transformer_name_)
         if not torch.cuda.is_available():
             print("WARNING: GPU not found.")
 
-    def fit(self, samples: List[dict], y: np.ndarray, groups: List[str]) -> None:
+    def fit(  # type: ignore[override]
+            self,
+            samples: List[dict],
+            y: np.ndarray,
+            groups: List[str]
+    ) -> None:
         samples_tokenized = self._tokenizer_transform(samples)
+
+        features_size = 0
+        if self.add_features_:
+            samples_tokenized = self._add_features(samples, samples_tokenized, fit=True)
+            features_size = len(samples_tokenized[0]["features"])
+
         data_loader = self._create_data_loader(samples_tokenized, y, shuffle=True)
         device = self._get_device()
-        self._create_model(device)
+        self._create_model(device, features_size)
         self._set_up_optimizers(data_loader)
         self._fit(data_loader, device)
 
@@ -55,6 +69,8 @@ class Transformer(BaseTokenizer):
     ) -> Tuple[np.ndarray, np.ndarray]:
         pad = True if for_lime else False
         samples_tokenized = self._tokenizer_transform(samples, pad)
+        if self.add_features_:
+            samples_tokenized = self._add_features(samples, samples_tokenized)
         predictions_proba = self._predict_proba(samples_tokenized)
         predictions = predictions_proba.argmax(axis=1)
         return predictions, predictions_proba
@@ -71,6 +87,7 @@ class Transformer(BaseTokenizer):
                 "attention_mask": batch[1].to(device),
                 "indexes_1": batch[3].to(device),
                 "indexes_2": batch[4].to(device),
+                "features": batch[5].to(device)
             }
             with torch.no_grad():
                 logit = self.model_(**inputs)[0]
@@ -80,6 +97,22 @@ class Transformer(BaseTokenizer):
 
     def _tokenizer_transform(self, samples: List[dict], pad: bool = False) -> List[dict]:
         return BaseTokenizer.transform(self, samples, pad)
+
+    def _add_features(
+            self,
+            samples: List[dict],
+            samples_tokenized: List[dict],
+            fit: bool = False
+    ) -> List[dict]:
+        if fit:
+            BaseEngineering.fit(self, samples)
+        features = BaseEngineering.get_features(self, samples).to_numpy()
+        new_samples = []
+        for i in range(len(samples)):
+            new_sample = {key: value for key, value in samples_tokenized[i].items()}
+            new_sample["features"] = features[i, :]
+            new_samples.append(new_sample)
+        return new_samples
 
     @staticmethod
     def _get_device() -> torch.device:
@@ -106,8 +139,8 @@ class Transformer(BaseTokenizer):
             collate_fn=self._collate_fn
         )
 
-    def _create_model(self, device: torch.device) -> None:
-        self.model_ = BaseTransformer(self.transformer_name_)
+    def _create_model(self, device: torch.device, n_extra_features: int) -> None:
+        self.model_ = BaseTransformer(self.transformer_name_, n_extra_features)
         self.model_.to(device=device)
         self.model_._encoder.resize_token_embeddings(len(self.tokenizer_))
 
@@ -138,6 +171,7 @@ class Transformer(BaseTokenizer):
                     "labels": batch[2].to(device),
                     "indexes_1": batch[3].to(device),
                     "indexes_2": batch[4].to(device),
+                    "features": batch[5].to(device)
                 }
                 outputs = self.model_(**inputs)
 
@@ -166,7 +200,8 @@ class Transformer(BaseTokenizer):
             torch.Tensor,
             Optional[torch.Tensor],
             torch.Tensor,
-            torch.Tensor
+            torch.Tensor,
+            Optional[torch.Tensor]
     ]:
         max_len = max([len(x["tokens"]) for x in batch])
 
@@ -182,12 +217,17 @@ class Transformer(BaseTokenizer):
         if "label" in batch[0]:
             labels = [x["label"] for x in batch]
 
+        features = None
+        if "features" in batch[0]:
+            features = [x["features"] for x in batch]
+
         return (
             torch.tensor(tokens, dtype=torch.long),
             torch.tensor(input_mask, dtype=torch.float),
             torch.tensor(labels, dtype=torch.long) if labels is not None else None,
             torch.tensor(indexes_1, dtype=torch.long),
-            torch.tensor(indexes_2, dtype=torch.long)
+            torch.tensor(indexes_2, dtype=torch.long),
+            torch.tensor(features, dtype=torch.float) if features is not None else None
         )
 
 
@@ -197,14 +237,14 @@ class BaseTransformer(nn.Module):
     N_LABELS = 2
     DROPOUT_RATE = 0.1
 
-    def __init__(self, transformer_name: str) -> None:
+    def __init__(self, transformer_name: str, n_extra_features: int = 0) -> None:
         super().__init__()
         config = AutoConfig.from_pretrained(transformer_name, num_labels=self.N_LABELS)
         config.gradient_checkpointing = True
         self._encoder = AutoModel.from_pretrained(transformer_name, config=config)
         self._loss_function = nn.CrossEntropyLoss()
         self._classifier = nn.Sequential(
-            nn.Linear(2 * config.hidden_size, config.hidden_size),
+            nn.Linear(2 * config.hidden_size + n_extra_features, config.hidden_size),
             nn.ReLU(),
             nn.Dropout(p=self.DROPOUT_RATE),
             nn.Linear(config.hidden_size, self.N_LABELS)
@@ -217,7 +257,8 @@ class BaseTransformer(nn.Module):
             attention_mask: torch.Tensor,
             labels: Optional[torch.Tensor] = None,
             indexes_1: Optional[torch.Tensor] = None,
-            indexes_2: Optional[torch.Tensor] = None
+            indexes_2: Optional[torch.Tensor] = None,
+            features: Optional[torch.Tensor] = None
     ):
         outputs = self._encoder(
             tokens,
@@ -229,6 +270,10 @@ class BaseTransformer(nn.Module):
         indexes_1_emb = pooled_output[idx, indexes_1]
         indexes_2_emb = pooled_output[idx, indexes_2]
         h = torch.cat((indexes_1_emb, indexes_2_emb), dim=-1)
+
+        if features is not None:
+            h = torch.cat((h, features), dim=-1)
+
         logits = self._classifier(h)
         outputs = (logits,)
 

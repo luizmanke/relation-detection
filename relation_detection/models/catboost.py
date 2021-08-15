@@ -3,16 +3,25 @@ import pandas as pd
 from catboost import CatBoostClassifier, Pool  # type: ignore
 from sklearn.model_selection import GroupShuffleSplit
 from typing import List, Optional, Tuple
+from .base.engineering import BaseEngineering
 
 
-class CatBoost(CatBoostClassifier):
+class CatBoost(BaseEngineering, CatBoostClassifier):
 
     def __init__(self):
+        BaseEngineering.__init__(self)
         CatBoostClassifier.__init__(self, random_state=42)
+        self.add_features_ = True
 
-    def fit(self, samples: List[dict], y: np.ndarray, groups: List[str]) -> None:
+    def fit(  # type: ignore[override]
+            self,
+            samples: List[dict],
+            y: np.ndarray,
+            groups: List[str]
+    ) -> None:
         sentences = self._get_surroundings(samples)
         df = self._to_pandas(sentences, y)
+        df = self._add_features(samples, df, fit=True) if self.add_features_ else df
         df_train, df_test = self._train_test_split(df, groups)
         self._fit_model(df_train, df_test)
 
@@ -23,6 +32,7 @@ class CatBoost(CatBoostClassifier):
     ) -> Tuple[np.ndarray, np.ndarray]:
         sentences = self._get_surroundings(samples)
         df = self._to_pandas(sentences)
+        df = self._add_features(samples, df) if self.add_features_ else df
         predictions_proba = CatBoostClassifier.predict_proba(self, df)
         predictions = predictions_proba.argmax(axis=1)
         return predictions, predictions_proba
@@ -55,15 +65,26 @@ class CatBoost(CatBoostClassifier):
         return df.iloc[indexes_train], df.iloc[indexes_test]
 
     def _fit_model(self, df_train: pd.DataFrame, df_test: pd.DataFrame) -> None:
-        FEATURES = ["prefix", "middle", "suffix"]
+        TEXT_FEATURES = ["prefix", "middle", "suffix"]
         train_pool = Pool(
-            df_train[FEATURES],
+            df_train.drop("label", axis=1),
             df_train["label"],
-            text_features=FEATURES
+            text_features=TEXT_FEATURES
         )
         eval_pool = Pool(
-            df_test[FEATURES],
+            df_test.drop("label", axis=1),
             df_test["label"],
-            text_features=FEATURES
+            text_features=TEXT_FEATURES
         )
         CatBoostClassifier.fit(self, train_pool, eval_set=eval_pool, verbose=False)
+
+    def _add_features(
+            self,
+            samples: List[dict],
+            df: pd.DataFrame,
+            fit: bool = False
+    ) -> np.ndarray:
+        if fit:
+            BaseEngineering.fit(self, samples)
+        df_features = BaseEngineering.get_features(self, samples)
+        return pd.concat([df, df_features], axis=1)
