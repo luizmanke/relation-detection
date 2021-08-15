@@ -3,14 +3,11 @@ import pandas as pd
 from catboost import CatBoostClassifier, Pool  # type: ignore
 from sklearn.model_selection import GroupShuffleSplit
 from typing import List, Optional, Tuple
-from .base.engineering import BaseEngineering
 
 
-class CatBoost(BaseEngineering, CatBoostClassifier):
+class CatBoost(CatBoostClassifier):
 
     def __init__(self):
-        self.add_features_ = False
-        BaseEngineering.__init__(self)
         CatBoostClassifier.__init__(self, random_state=42)
 
     def fit(  # type: ignore[override]
@@ -21,7 +18,6 @@ class CatBoost(BaseEngineering, CatBoostClassifier):
     ) -> None:
         sentences = self._get_surroundings(samples)
         df = self._to_pandas(sentences, y)
-        df = self._add_features(samples, df, fit=True) if self.add_features_ else df
         df_train, df_test = self._train_test_split(df, groups)
         self._fit_model(df_train, df_test)
 
@@ -32,7 +28,6 @@ class CatBoost(BaseEngineering, CatBoostClassifier):
     ) -> Tuple[np.ndarray, np.ndarray]:
         sentences = self._get_surroundings(samples)
         df = self._to_pandas(sentences)
-        df = self._add_features(samples, df) if self.add_features_ else df
         predictions_proba = CatBoostClassifier.predict_proba(self, df)
         predictions = predictions_proba.argmax(axis=1)
         return predictions, predictions_proba
@@ -77,14 +72,3 @@ class CatBoost(BaseEngineering, CatBoostClassifier):
             text_features=TEXT_FEATURES
         )
         CatBoostClassifier.fit(self, train_pool, eval_set=eval_pool, verbose=False)
-
-    def _add_features(
-            self,
-            samples: List[dict],
-            df: pd.DataFrame,
-            fit: bool = False
-    ) -> np.ndarray:
-        if fit:
-            BaseEngineering.fit(self, samples)
-        df_features = BaseEngineering.get_features(self, samples)
-        return pd.concat([df, df_features], axis=1)
