@@ -1,8 +1,10 @@
 import nltk
 import numpy as np
+import pandas as pd
 from copy import deepcopy
 from lime.explanation import Explanation
 from lime.lime_text import IndexedString, LimeTextExplainer, TextDomainMapper
+from lime.submodular_pick import SubmodularPick
 from typing import Any, Callable, List, Tuple
 from . import utils
 
@@ -27,6 +29,24 @@ class Explainer:
             _nested_predict,
             sample
         )
+
+    def explain_model(self, model: Any, samples: List[dict]) -> None:
+        globals()["i"] = -1
+        lookup_table = [
+            self._find_entities_index(
+                self._get_original_tokens(sample)
+            ) for sample in samples
+        ]
+
+        # define nested function
+        def _nested_predict(sentences: List[str]) -> np.ndarray:
+            globals()["i"] += 1
+            index_1, index_2 = lookup_table[globals()["i"]]
+            samples = self._recreate_samples(sentences, index_1, index_2)
+            return model.predict(samples, return_proba=True, for_lime=True)
+
+        sentences = [self._create_sentence_without_entities(sample) for sample in samples]
+        self._explain_model(sentences, _nested_predict)
 
     def _get_original_tokens(self, sample: dict) -> List[str]:
         sample = deepcopy(sample)
@@ -79,6 +99,31 @@ class Explainer:
         lime_values.show_in_notebook(
             text=True,
             labels=(lime_values.available_labels()[0],)
+        )
+
+    def _explain_model(self, sentences: List[str], predict_function: Callable) -> None:
+        explainer = self._create_explainer()
+        picks = SubmodularPick(
+            explainer,
+            sentences,
+            predict_function,
+            method="full",
+            num_exps_desired=2
+        )
+
+        # Plot
+        weights = pd.DataFrame([
+            dict(item.as_list(item.available_labels()[0])) for item in picks.explanations
+        ])
+        weights = weights.fillna(0)
+        weights["prediction"] = [item.available_labels()[0] for item in picks.explanations]
+        weights["prediction"] = weights["prediction"].replace({0: "not related", 1: "related"})
+        weights_grouped = weights.groupby("prediction").mean().T
+        weights_grouped["abs"] = np.abs(weights_grouped.iloc[:, 0])
+        weights_grouped = weights_grouped[["related", "not related", "abs"]]
+        weights_grouped = weights_grouped.sort_values("abs", ascending=False).head(25)
+        weights_grouped.sort_values("abs", ascending=True).drop("abs", axis=1).plot(
+            kind="barh", width=1, figsize=(16, 9), grid=True
         )
 
     def _replace_values(self, lime_values: Explanation, sample: dict) -> Explanation:
