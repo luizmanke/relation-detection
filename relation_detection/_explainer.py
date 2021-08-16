@@ -1,6 +1,7 @@
 import nltk
 import numpy as np
-from lime.submodular_pick import SubmodularPick
+from copy import deepcopy
+from lime.explanation import Explanation
 from lime.lime_text import IndexedString, LimeTextExplainer, TextDomainMapper
 from typing import Any, Callable, List, Tuple
 from . import utils
@@ -13,7 +14,6 @@ class Explainer:
 
     def explain_sample(self, model: Any, sample: dict) -> None:
         original_tokens = self._get_original_tokens(sample)
-        original_sentence = " ".join(original_tokens)
         index_1, index_2 = self._find_entities_index(original_tokens)
 
         # define nested function
@@ -25,13 +25,11 @@ class Explainer:
         self._explain_sample(
             sentence_without_entities,
             _nested_predict,
-            original_sentence,
-            index_1,
-            index_2
+            sample
         )
 
     def _get_original_tokens(self, sample: dict) -> List[str]:
-        sample = dict(sample)
+        sample = deepcopy(sample)
         sample["tokens"][sample["index_1"]] = "[E1]"
         sample["tokens"][sample["index_2"]] = "[E2]"
         original_sentence = " ".join(sample["tokens"])
@@ -48,7 +46,7 @@ class Explainer:
 
     @staticmethod
     def _create_sentence_without_entities(sample: dict) -> str:
-        sample = dict(sample)
+        sample = deepcopy(sample)
         sample["tokens"][sample["index_1"]] = ""
         sample["tokens"][sample["index_2"]] = ""
         return " ".join(sample["tokens"])
@@ -70,37 +68,55 @@ class Explainer:
             self,
             sentence: str,
             predict_function: Callable,
-            original_sentence: str,
-            index_1: int,
-            index_2: int
+            sample: dict
     ) -> None:
-
-        # Explain
         explainer = self._create_explainer()
         lime_values = explainer.explain_instance(
             text_instance=sentence,
             classifier_fn=predict_function
         )
+        lime_values = self._replace_values(lime_values, sample)
+        lime_values.show_in_notebook(
+            text=True,
+            labels=(lime_values.available_labels()[0],)
+        )
 
-        # Replace sentence
+    def _replace_values(self, lime_values: Explanation, sample: dict) -> Explanation:
+        sample = deepcopy(sample)
+
+        # get values
+        tokens = sample["tokens"]
+        index_1 = sample["index_1"]
+        index_2 = sample["index_2"]
+
+        # set entities
+        entity_1 = "[E1] " + tokens[index_1] + " [E1]"
+        entity_2 = "[E2] " + tokens[index_2] + " [E2]"
+
+        # compute lengths
+        length_1 = len(self._tokenize_to_words(entity_1))
+        length_2 = len(self._tokenize_to_words(entity_2))
+
+        # recompute
+        tokens[index_1] = entity_1
+        tokens[index_2] = entity_2
+        new_index_2 = index_2 + length_1 - 1
+
+        # replace values
         lime_values.domain_mapper = TextDomainMapper(IndexedString(
-            original_sentence,
+            " ".join(tokens),
             split_expression=self._tokenize_to_words,
             mask_string="[PAD]",
             bow=False
         ))
         new_local_exp = {1: [[x[0], x[1]] for x in lime_values.local_exp[1]]}
         for item in new_local_exp[1]:
-            for index in sorted([index_1, index_2]):
+            for index, length in sorted(zip([index_1, new_index_2], [length_1, length_2])):
                 if item[0] >= index:
-                    item[0] += 1
+                    item[0] += length
         lime_values.local_exp = new_local_exp
 
-        # Plot
-        lime_values.show_in_notebook(
-            text=True,
-            labels=(lime_values.available_labels()[0],)
-        )
+        return lime_values
 
     def _create_explainer(self) -> LimeTextExplainer:
         return LimeTextExplainer(
