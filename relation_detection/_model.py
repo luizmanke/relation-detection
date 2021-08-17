@@ -3,7 +3,6 @@ import pandas as pd
 from datetime import datetime as dt
 from sklearn import metrics
 from sklearn.model_selection import GroupKFold
-from termcolor import colored
 from tqdm import tqdm
 from typing import Any, Dict, List, Tuple
 from .models.between import Between
