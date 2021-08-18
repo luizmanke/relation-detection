@@ -8,10 +8,8 @@ def download_nltk_model() -> None:
         nltk.data.find("corpora/stopwords")
         nltk.data.find("tokenizers/punkt")
     except Exception:
-        print("\nDownloading nltk model...")
-        nltk.download("stopwords")
-        nltk.download("punkt")
-        print("")
+        nltk.download("stopwords", quiet=True)
+        nltk.download("punkt", quiet=True)
 
 
 def download_spacy_model() -> None:
