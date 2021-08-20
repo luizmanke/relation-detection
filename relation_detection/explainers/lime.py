@@ -106,7 +106,8 @@ class LIME(BaseExplainer):
         # recompute
         tokens[index_1] = entity_1
         tokens[index_2] = entity_2
-        new_index_2 = index_2 + length_1 - 1
+        new_index_1 = index_2 + length_1 - 1 if index_1 > index_2 else index_1
+        new_index_2 = index_2 + length_1 - 1 if index_2 > index_1 else index_2
 
         # replace values
         lime_values.domain_mapper = TextDomainMapper(IndexedString(
@@ -117,7 +118,7 @@ class LIME(BaseExplainer):
         ))
         new_local_exp = {1: [[x[0], x[1]] for x in lime_values.local_exp[1]]}
         for item in new_local_exp[1]:
-            for index, length in sorted(zip([index_1, new_index_2], [length_1, length_2])):
+            for index, length in sorted(zip([new_index_1, new_index_2], [length_1, length_2])):
                 if item[0] >= index:
                     item[0] += length
         lime_values.local_exp = new_local_exp
