@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from .datasets.dbpedia import DBpedia
 from .datasets.news import News
 
@@ -17,9 +17,9 @@ class Dataset:
     def list_available_sets(self) -> List[str]:
         return list(self.available_sets_.keys())
 
-    def load(self, dataset_name: str) -> None:
+    def load(self, dataset_name: str, file_path: Optional[str] = None) -> None:
         assert dataset_name in self.available_sets_
-        self.dataset_ = self.available_sets_[dataset_name]()
+        self.dataset_ = self.available_sets_[dataset_name](file_path)
         self.dataset_.load()  # type: ignore
 
     def get_data(self) -> Tuple[List[dict], np.ndarray, List[str]]:

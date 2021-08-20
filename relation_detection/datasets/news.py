@@ -1,14 +1,14 @@
 import nltk
 import numpy as np
 import pandas as pd
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from ..utils import download_nltk_model
 
 
 class News:
 
-    def __init__(self):
-        self.file_name_ = "News.csv"
+    def __init__(self, file_path: Optional[str] = None):
+        self.file_path_ = file_path
         download_nltk_model()
 
     def load(self) -> None:
@@ -24,7 +24,7 @@ class News:
         return self._get_data()
 
     def _load_text(self) -> None:
-        self.text_ = pd.read_csv(self.file_name_)
+        self.text_ = pd.read_csv(self.file_path_)
 
     def _extract_sentences(self) -> None:
         self.samples_ = self.text_.to_dict(orient="records")
