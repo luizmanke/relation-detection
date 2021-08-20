@@ -106,7 +106,7 @@ class LIME(BaseExplainer):
         # recompute
         tokens[index_1] = entity_1
         tokens[index_2] = entity_2
-        new_index_1 = index_2 + length_1 - 1 if index_1 > index_2 else index_1
+        new_index_1 = index_1 + length_2 - 1 if index_1 > index_2 else index_1
         new_index_2 = index_2 + length_1 - 1 if index_2 > index_1 else index_2
 
         # replace values
