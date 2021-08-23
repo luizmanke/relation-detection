@@ -28,7 +28,7 @@ class BaseEngineering:
         self._fit_idf(tokens_list)
         self._fit_pca(samples)
 
-    def get_features(self, samples: List[dict]) -> pd.DataFrame:
+    def transform(self, samples: List[dict]) -> pd.DataFrame:
         features = []
         for sample in samples:
 

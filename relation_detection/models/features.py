@@ -17,7 +17,7 @@ class Features(BaseEngineering, BaseClassifier):
             groups: List[str]
     ) -> None:
         BaseEngineering.fit(self, samples)
-        x = BaseEngineering.get_features(self, samples)
+        x = BaseEngineering.transform(self, samples)
         BaseClassifier.fit(self, x, y)
 
     def predict(  # type: ignore[override]
@@ -25,7 +25,7 @@ class Features(BaseEngineering, BaseClassifier):
             samples: List[dict],
             for_lime: bool = False
     ) -> Tuple[np.ndarray, np.ndarray]:
-        x = BaseEngineering.get_features(self, samples)
+        x = BaseEngineering.transform(self, samples)
         predictions_proba = BaseClassifier.predict(self, x)
         predictions = predictions_proba.argmax(axis=1)
         return predictions, predictions_proba
