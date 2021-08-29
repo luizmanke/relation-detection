@@ -24,7 +24,7 @@ class Surround(BaseVectorizer, BaseClassifier):
     def predict(  # type: ignore[override]
             self,
             samples: List[dict],
-            for_lime: bool = False
+            for_explainer: bool = False
     ) -> Tuple[np.ndarray, np.ndarray]:
         sentences = self._get_surroundings(samples)
         x = self._vectorizer_transform(sentences)

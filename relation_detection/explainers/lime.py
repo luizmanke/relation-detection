@@ -22,7 +22,7 @@ class LIME(BaseExplainer):
         # define nested function
         def _nested_predict(sentences: List[str]) -> np.ndarray:
             samples = self._recreate_samples(sentences, index_1, index_2)
-            return model.predict(samples, return_proba=True, for_lime=True)
+            return model.predict(samples, return_proba=True, for_explainer=True)
 
         sentence_without_entities = self._create_sentence_without_entities(sample)
         self._explain_sample(sentence_without_entities, _nested_predict, sample)
@@ -40,7 +40,7 @@ class LIME(BaseExplainer):
             globals()["i"] += 1
             index_1, index_2 = lookup_table[globals()["i"]]
             samples = self._recreate_samples(sentences, index_1, index_2)
-            return model.predict(samples, return_proba=True, for_lime=True)
+            return model.predict(samples, return_proba=True, for_explainer=True)
 
         sentences = [self._create_sentence_without_entities(sample) for sample in samples]
         self._explain_model(sentences, _nested_predict)

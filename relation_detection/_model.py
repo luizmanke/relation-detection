@@ -44,9 +44,9 @@ class Model:
             self,
             samples: List[dict],
             return_proba: bool = False,
-            for_lime: bool = False
+            for_explainer: bool = False
     ) -> np.ndarray:
-        predictions, predictions_proba = self.model_.predict(samples, for_lime)
+        predictions, predictions_proba = self.model_.predict(samples, for_explainer)
         if return_proba:
             return predictions_proba
         else:

@@ -56,9 +56,9 @@ class Transformer(BaseTokenizer):
     def predict(
             self,
             samples: List[dict],
-            for_lime: bool = False
+            for_explainer: bool = False
     ) -> Tuple[np.ndarray, np.ndarray]:
-        pad = True if for_lime else False
+        pad = True if for_explainer else False
         samples_tokenized = self._tokenizer_transform(samples, pad)
         predictions_proba = self._predict_proba(samples_tokenized)
         predictions = predictions_proba.argmax(axis=1)

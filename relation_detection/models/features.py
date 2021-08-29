@@ -23,7 +23,7 @@ class Features(BaseEngineering, BaseClassifier):
     def predict(  # type: ignore[override]
             self,
             samples: List[dict],
-            for_lime: bool = False
+            for_explainer: bool = False
     ) -> Tuple[np.ndarray, np.ndarray]:
         x = BaseEngineering.transform(self, samples)
         predictions_proba = BaseClassifier.predict(self, x)

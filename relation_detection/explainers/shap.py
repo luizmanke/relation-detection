@@ -43,7 +43,7 @@ class SHAP(BaseExplainer):
         # define nested function
         def _nested_predict(sentences: List[str]) -> np.ndarray:
             samples = self._recreate_samples(sentences, index_1, index_2)
-            return model.predict(samples, return_proba=True, for_lime=True)
+            return model.predict(samples, return_proba=True, for_explainer=True)
 
         sentence_without_entities = self._create_sentence_without_entities(sample)
         explainer = shap.Explainer(_nested_predict, self.tokenizer_)

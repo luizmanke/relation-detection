@@ -24,7 +24,7 @@ class CatBoost(CatBoostClassifier):
     def predict(
             self,
             samples: List[dict],
-            for_lime: bool = False
+            for_explainer: bool = False
     ) -> Tuple[np.ndarray, np.ndarray]:
         sentences = self._get_surroundings(samples)
         df = self._to_pandas(sentences)
