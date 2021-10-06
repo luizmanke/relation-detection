@@ -24,6 +24,7 @@ pytest-cov = "==2.12.1"
 types-requests = "==2.25.0"
 flake8 = "==3.9.2"
 pytest = "==6.2.4"
+bandit = "*"
 
 [requires]
 python_version = "3.8"
