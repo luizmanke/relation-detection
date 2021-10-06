@@ -16,7 +16,7 @@ from .utils import print_sentence
 class Model:
 
     n_folds_ = 5
-    available_methods_ = {
+    available_models_ = {
         "between": Between,
         "catboost": CatBoost,
         "features": Features,
@@ -24,14 +24,8 @@ class Model:
         "transformer": Transformer
     }
 
-    def __init__(self) -> None:
-        pass
-
-    def list_available_methods(self) -> List[str]:
-        return list(self.available_methods_.keys())
-
-    def load(self, model_name: str) -> None:
-        assert model_name in self.available_methods_
+    def __init__(self, model_name: str) -> None:
+        self._assert_model_name(model_name)
         self.model_name_ = model_name
 
     def train(self, dataset: Any) -> None:
@@ -84,6 +78,10 @@ class Model:
         print("true label:", self.labels_[index])
         print("prediction:", self.predictions_proba_[index][1])
         print_sentence(sample)
+
+    def _assert_model_name(self, model_name: str) -> None:
+        if model_name not in self.available_models_:
+            raise Exception(f"Model name not in {self.available_models_.keys()}")
 
     def _train_setup(self, dataset: Any) -> None:
         self.results_: Dict[str, Any] = {"train": {}, "test": {}}

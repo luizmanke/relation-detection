@@ -19,6 +19,6 @@ class Dataset:
     def get_data(self) -> Tuple[List[dict], np.ndarray, List[str]]:
         return self.dataset_.get_data()  # type: ignore
 
-    def _assert_dataset_name(self, dataset_name:str) -> None:
+    def _assert_dataset_name(self, dataset_name: str) -> None:
         if dataset_name not in self.available_sets_:
             raise Exception(f"Dataset name not in {self.available_sets_.keys()}")
