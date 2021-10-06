@@ -7,7 +7,7 @@ from tqdm import tqdm
 from typing import Any, Dict, List, Tuple
 from .models.between import Between
 from .models.catboost import CatBoost
-from .models.features import Features
+from .models.statistical import Statistical
 from .models.surround import Surround
 from .models.transformer import Transformer
 from .utils import print_sentence
@@ -19,7 +19,7 @@ class Model:
     available_models_ = {
         "between": Between,
         "catboost": CatBoost,
-        "features": Features,
+        "statistical": Statistical,
         "surround": Surround,
         "transformer": Transformer
     }
@@ -97,7 +97,7 @@ class Model:
         samples_train, labels_train, groups_train = self._select_samples(indexes)
 
         start_time = dt.now()
-        self.model_ = self.available_methods_[self.model_name_]()
+        self.model_ = self.available_models_[self.model_name_]()
         self.model_.fit(samples_train, labels_train, groups_train)
         elapsed_time = dt.now() - start_time
 

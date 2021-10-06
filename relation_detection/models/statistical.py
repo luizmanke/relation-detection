@@ -4,7 +4,7 @@ from .base.classifier import BaseClassifier
 from .base.engineering import BaseEngineering
 
 
-class Features(BaseEngineering, BaseClassifier):
+class Statistical(BaseEngineering, BaseClassifier):
 
     def __init__(self, **kwargs):
         BaseEngineering.__init__(self)
