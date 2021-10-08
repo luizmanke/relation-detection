@@ -17,6 +17,8 @@ spacy = "*"
 termcolor = "*"
 torch = "*"
 transformers = "*"
+pyharmonysearch = "*"
+types-termcolor = "*"
 
 [dev-packages]
 pytest-mypy = "*"

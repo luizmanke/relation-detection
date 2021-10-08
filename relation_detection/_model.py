@@ -7,6 +7,7 @@ from tqdm import tqdm
 from typing import Any, Dict, List, Tuple
 from .models.between import Between
 from .models.catboost import CatBoost
+from .models.pattern import Pattern
 from .models.statistical import Statistical
 from .models.surround import Surround
 from .models.transformer import Transformer
@@ -19,6 +20,7 @@ class Model:
     available_models_ = {
         "between": Between,
         "catboost": CatBoost,
+        "pattern": Pattern,
         "statistical": Statistical,
         "surround": Surround,
         "transformer": Transformer
