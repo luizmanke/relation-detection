@@ -9,13 +9,13 @@ class Pattern(BaseEngineering, BaseMetaheuristic):
 
     FEATURES = {
         "n_tokens_between_entities": [0, 50],
-        "n_commas_between_entities": [0, 10],
-        "n_semicolons_between_entities": [0, 10],
-        "n_colons_between_entities": [0, 10],
-        "n_periods_between_entities": [0, 10],
-        "n_exclamation_points_between_entities": [0, 10],
-        "n_question_marks_between_entities": [0, 10],
-        "n_quotation_marks_between_entities": [0, 10],
+        "n_commas_between_entities": [0, 20],
+        "n_semicolons_between_entities": [0, 20],
+        "n_colons_between_entities": [0, 20],
+        "n_periods_between_entities": [0, 20],
+        "n_exclamation_points_between_entities": [0, 20],
+        "n_question_marks_between_entities": [0, 20],
+        "n_quotation_marks_between_entities": [0, 20],
         "n_stopwords_between_entities": [0, 20],
         "n_prop_names_between_entities": [0, 20],
         "n_pronouns_between_entities": [0, 20],
@@ -39,7 +39,7 @@ class Pattern(BaseEngineering, BaseMetaheuristic):
             groups: List[str]
     ) -> None:
         x = self._compute_features(samples)
-        patterns_per_run, self.history_ = BaseMetaheuristic.get_best_population(self, x, y)
+        patterns_per_run, self.history_ = BaseMetaheuristic.fit_and_return(self, x, y)
         self.patterns_ = self._select_best_patterns(x, y, patterns_per_run)
 
     def predict(  # type: ignore[override]
