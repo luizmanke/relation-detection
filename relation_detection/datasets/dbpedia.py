@@ -43,7 +43,7 @@ class DBpedia:
                 file.write(response.content)
 
     def _load_text(self) -> None:
-        with open(self.file_path_, "r") as text_file:
+        with open(self.file_path_, "r", encoding="utf-8") as text_file:
             self.text_ = text_file.read()
 
     def _extract_sentences(self) -> None:
