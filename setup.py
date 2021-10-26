@@ -13,6 +13,5 @@ setup(
     name="relation_detection",
     packages=find_packages(exclude=("tests", "notebooks")),
     install_requires=dependencies,
-    include_package_data=True,
     package_data={"relation_detection": ["*.pkl"]}
 )
