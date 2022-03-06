@@ -1,7 +1,17 @@
 from setuptools import setup, find_packages
+from setuptools.command.install import install
 
 
-dependencies = [
+class PostInstallCommand(install):
+    def run(self):
+        install.run(self)
+
+        import nltk
+        nltk.download("stopwords", quiet=True)
+        nltk.download("punkt", quiet=True)
+
+
+DEPENDENCIES = [
     "catboost==0.26",
     "imbalanced-learn==0.8.0",
     "ipython==7.26.0",
@@ -22,6 +32,7 @@ dependencies = [
 setup(
     name="relation_detection",
     packages=find_packages(exclude=("tests", "notebooks")),
-    install_requires=dependencies,
-    package_data={"relation_detection": ["*.pkl"]}
+    install_requires=DEPENDENCIES,
+    package_data={"relation_detection": ["*.pkl"]},
+    cmdclass={"install": PostInstallCommand}
 )
