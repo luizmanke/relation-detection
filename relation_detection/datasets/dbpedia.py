@@ -3,7 +3,7 @@ import numpy as np
 import re
 from imblearn.under_sampling import RandomUnderSampler
 from typing import Any, Dict, List, Tuple
-from .._dataset import BaseDataset
+from .base import BaseDataset
 
 
 class DBpedia(BaseDataset):

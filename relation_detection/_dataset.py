@@ -1,6 +1,6 @@
 import numpy as np
-from abc import abstractclassmethod
 from typing import List, Tuple
+from .datasets.base import BaseDataset
 from .datasets.dbpedia import DBpedia
 from .datasets.news import News
 
@@ -17,10 +17,3 @@ class Dataset:
 
     def get_data(self) -> Tuple[List[dict], np.ndarray, List[str]]:
         return self.dataset_.get_data()
-
-
-class BaseDataset:
-
-    @abstractclassmethod
-    def get_data(self) -> Tuple[List[dict], np.ndarray, List[str]]:
-        pass
