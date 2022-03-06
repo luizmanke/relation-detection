@@ -1,15 +1,5 @@
-import nltk
 import spacy
 from termcolor import colored
-
-
-def download_nltk_model() -> None:
-    try:
-        nltk.data.find("corpora/stopwords")
-        nltk.data.find("tokenizers/punkt")
-    except Exception:
-        nltk.download("stopwords", quiet=True)
-        nltk.download("punkt", quiet=True)
 
 
 def download_spacy_model() -> None:

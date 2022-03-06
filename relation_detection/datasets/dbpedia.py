@@ -1,46 +1,26 @@
 import nltk
 import numpy as np
-import os
 import re
-import requests
 from imblearn.under_sampling import RandomUnderSampler
-from typing import Any, Dict, List, Optional, Tuple
-from ..utils import download_nltk_model
-
-DEFAULT_FILE_PATH = "/tmp/relation_detection/DBpediaRelations-PT-0.2.txt"  # nosec
+from typing import Any, Dict, List, Tuple
+from .._dataset import BaseDataset
 
 
-class DBpedia:
+class DBpedia(BaseDataset):
 
-    def __init__(self, file_path: Optional[str] = None):
-        self.file_path_ = DEFAULT_FILE_PATH if file_path is None else file_path
-        download_nltk_model()
-
-    def load(self) -> None:
-        if not hasattr(self, "samples"):
-            if self.file_path_ == DEFAULT_FILE_PATH:
-                self._download_file()
-            self._load_text()
-            self._extract_sentences()
-            self._span_entities()
-            self._tokenize()
-            self._mark_entities()
-            self._rename_relations()
+    def __init__(self, file_path: str):
+        self.file_path_ = file_path
+        self._load_text()
+        self._extract_sentences()
+        self._span_entities()
+        self._tokenize()
+        self._mark_entities()
+        self._rename_relations()
 
     def get_data(self) -> Tuple[List[dict], np.ndarray, List[str]]:
         filtered_samples = self._filter_samples()
         selected_samples = self._resample(filtered_samples)
         return self._get_data(selected_samples)
-
-    def _download_file(self) -> None:
-        if not os.path.isfile(self.file_path_):
-            os.makedirs(os.path.dirname(self.file_path_), exist_ok=True)
-            response = requests.get(
-                "https://github.com/luizmanke/relation-detection/"
-                "raw/master/data/DBpediaRelations-PT-0.2.txt"
-            )
-            with open(self.file_path_, "wb") as file:
-                file.write(response.content)
 
     def _load_text(self) -> None:
         with open(self.file_path_, "r", encoding="utf-8") as text_file:
