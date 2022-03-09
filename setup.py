@@ -16,6 +16,7 @@ DEPENDENCIES = [
     "nltk==3.6.2",
     "numpy==1.21.0",
     "pandas==1.3.0",
+    "pt_core_news_lg @  https://github.com/explosion/spacy-models/releases/download/pt_core_news_lg-3.1.0/pt_core_news_lg-3.1.0.tar.gz",
     "scikit-learn==0.24.2",
     "spacy==3.1.0",
     "termcolor==1.1.0",
