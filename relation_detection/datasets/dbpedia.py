@@ -16,7 +16,7 @@ class DBpedia:
         self._mark_entities()
         self._rename_relations()
 
-    def get_data(self) -> Dict[str, Any]:
+    def get_data(self) -> Dict[str, list]:
         filtered_samples = self._filter_samples()
         selected_samples = self._resample(filtered_samples)
         return self._get_data(selected_samples)
@@ -125,14 +125,14 @@ class DBpedia:
         selected_indexes = sorted(selected_indexes[:, 0])
         return [samples[i] for i in selected_indexes]
 
-    def _get_data(self, samples: List[dict]) -> Dict[str, Any]:
+    def _get_data(self, samples: List[dict]) -> Dict[str, list]:
         KEYS = ["tokens", "index_1", "index_2", "relation", "SENTENCE"]
         selected_samples = [
             {
                 key: value for key, value in sample.items() if key in KEYS
             } for sample in samples
         ]
-        selected_labels = np.array([sample.pop("relation") for sample in selected_samples])
+        selected_labels = [sample.pop("relation") for sample in selected_samples]
         selected_groups = [sample.pop("SENTENCE") for sample in selected_samples]
         return {
             "samples": selected_samples,
