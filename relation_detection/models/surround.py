@@ -1,14 +1,14 @@
 import numpy as np
 from typing import List, Tuple
-from .base.classifier import BaseClassifier
-from .base.vectorizer import BaseVectorizer
+from .base.classifier import Classifier
+from .base.embedder import Embedder
 
 
-class Surround(BaseVectorizer, BaseClassifier):
+class Surround(Embedder, Classifier):
 
     def __init__(self, **kwargs):
-        BaseVectorizer.__init__(self, vectorizer_name="spacy")
-        BaseClassifier.__init__(self, **kwargs)
+        Embedder.__init__(self)
+        Classifier.__init__(self, **kwargs)
 
     def fit(  # type: ignore[override]
             self,
@@ -17,9 +17,8 @@ class Surround(BaseVectorizer, BaseClassifier):
             groups: List[str]
     ) -> None:
         sentences = self._get_surroundings(samples)
-        self._vectorizer_fit(sentences)
         x = self._vectorizer_transform(sentences)
-        BaseClassifier.fit(self, x, y)
+        Classifier.fit(self, x, y)
 
     def predict(  # type: ignore[override]
             self,
@@ -28,7 +27,7 @@ class Surround(BaseVectorizer, BaseClassifier):
     ) -> Tuple[np.ndarray, np.ndarray]:
         sentences = self._get_surroundings(samples)
         x = self._vectorizer_transform(sentences)
-        predictions_proba = BaseClassifier.predict(self, x)
+        predictions_proba = Classifier.predict(self, x)
         predictions = predictions_proba.argmax(axis=1)
         return predictions, predictions_proba
 
@@ -43,11 +42,8 @@ class Surround(BaseVectorizer, BaseClassifier):
             ])
         return surroundings
 
-    def _vectorizer_fit(self, sentences: List[str]) -> None:
-        BaseVectorizer.fit(self, sentences)
-
     def _vectorizer_transform(self, sentences: List[str]) -> np.ndarray:
-        x_flatten = BaseVectorizer.transform(self, sentences)
+        x_flatten = Embedder.transform(self, sentences)
         x = np.zeros((x_flatten.shape[0]//3, x_flatten.shape[1]*3))
         for i in range(x_flatten.shape[0]//3):
             x[i, :] = np.concatenate([

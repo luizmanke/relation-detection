@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
 
-class BaseClassifier(RandomForestClassifier):
+class Classifier(RandomForestClassifier):
 
     def __init__(self, **kwargs) -> None:
         RandomForestClassifier.__init__(self, random_state=42, **kwargs)
