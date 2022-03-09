@@ -1,4 +1,3 @@
-import spacy
 from termcolor import colored
 
 
