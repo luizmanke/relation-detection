@@ -5,12 +5,7 @@ from sklearn import metrics
 from sklearn.model_selection import GroupKFold
 from tqdm import tqdm
 from typing import Any, Dict, List, Tuple
-from .models.between import Between
-from .models.catboost import CatBoost
-from .models.pattern import Pattern
-from .models.statistical import Statistical
 from .models.surround import Surround
-from .models.transformer import Transformer
 from .utils import print_sentence
 
 
@@ -18,16 +13,10 @@ class Model:
 
     n_folds_ = 5
     available_models_ = {
-        "between": Between,
-        "catboost": CatBoost,
-        "pattern": Pattern,
-        "statistical": Statistical,
-        "surround": Surround,
-        "transformer": Transformer
+        "surround": Surround
     }
 
     def __init__(self, model_name: str) -> None:
-        self._assert_model_name(model_name)
         self.model_name_ = model_name
 
     def train(self, dataset: Any) -> None:
@@ -76,24 +65,20 @@ class Model:
         return df.transpose()
 
     def print_sentence(self, index: int) -> None:
-        sample = {key: value for key, value in self.samples_[index].items()}
-        print("true label:", self.labels_[index])
+        sample = {key: value for key, value in self.data_["samples"][index].items()}
+        print("true label:", self.data_["labels"][index])
         print("prediction:", self.predictions_proba_[index][1])
         print_sentence(sample)
 
-    def _assert_model_name(self, model_name: str) -> None:
-        if model_name not in self.available_models_:
-            raise Exception(f"Model name not in {self.available_models_.keys()}")
-
     def _train_setup(self, dataset: Any) -> None:
         self.results_: Dict[str, Any] = {"train": {}, "test": {}}
-        self.samples_, self.labels_, self.groups_ = dataset.get_data()
-        self.predictions_ = np.empty(len(self.samples_))
-        self.predictions_proba_ = np.empty((len(self.samples_), 2))
+        self.data_ = dataset.get_data()
+        self.predictions_ = np.empty(len(self.data_["samples"]))
+        self.predictions_proba_ = np.empty((len(self.data_["samples"]), 2))
 
     def _create_splits(self) -> Any:
         gss = GroupKFold(n_splits=self.n_folds_)
-        return gss.split(self.samples_, self.labels_, self.groups_)
+        return gss.split(self.data_["samples"], self.data_["labels"], self.data_["groups"])
 
     def _train(self, indexes: np.ndarray, fold: int) -> None:
         samples_train, labels_train, groups_train = self._select_samples(indexes)
@@ -120,9 +105,9 @@ class Model:
         self.predictions_proba_[indexes] = labels_proba_test
 
     def _select_samples(self, indexes: np.ndarray) -> Tuple[List[dict], np.ndarray, List[str]]:
-        selected_samples = [self.samples_[i] for i in indexes]
-        selected_labels = self.labels_[indexes]
-        selected_groups = [self.groups_[i] for i in indexes]
+        selected_samples = [self.data_["samples"][i] for i in indexes]
+        selected_labels = self.data_["labels"][indexes]
+        selected_groups = [self.data_["groups"][i] for i in indexes]
         return selected_samples, selected_labels, selected_groups
 
     def _evaluate(
@@ -145,9 +130,9 @@ class Model:
         assert label in ["TP", "TN", "FP", "FN"]
 
         if label[0] == "T":
-            condition_1 = self.predictions_ == self.labels_
+            condition_1 = self.predictions_ == self.data_["labels"]
         elif label[0] == "F":
-            condition_1 = self.predictions_ != self.labels_
+            condition_1 = self.predictions_ != self.data_["labels"]
 
         if label[1] == "P":
             condition_2 = self.predictions_ == 1
