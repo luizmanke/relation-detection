@@ -2,7 +2,7 @@ import nltk
 import numpy as np
 import re
 from imblearn.under_sampling import RandomUnderSampler
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 
 class DBpedia:
@@ -16,7 +16,7 @@ class DBpedia:
         self._mark_entities()
         self._rename_relations()
 
-    def get_data(self) -> Tuple[List[dict], np.ndarray, List[str]]:
+    def get_data(self) -> Dict[str, Any]:
         filtered_samples = self._filter_samples()
         selected_samples = self._resample(filtered_samples)
         return self._get_data(selected_samples)
@@ -125,7 +125,7 @@ class DBpedia:
         selected_indexes = sorted(selected_indexes[:, 0])
         return [samples[i] for i in selected_indexes]
 
-    def _get_data(self, samples: List[dict]) -> Tuple[List[dict], np.ndarray, List[str]]:
+    def _get_data(self, samples: List[dict]) -> Dict[str, Any]:
         KEYS = ["tokens", "index_1", "index_2", "relation", "SENTENCE"]
         selected_samples = [
             {
@@ -134,4 +134,8 @@ class DBpedia:
         ]
         selected_labels = np.array([sample.pop("relation") for sample in selected_samples])
         selected_groups = [sample.pop("SENTENCE") for sample in selected_samples]
-        return selected_samples, selected_labels, selected_groups
+        return {
+            "samples": selected_samples,
+            "labels": selected_labels,
+            "groups": selected_groups
+        }
