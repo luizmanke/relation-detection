@@ -3,10 +3,9 @@ import numpy as np
 import re
 from imblearn.under_sampling import RandomUnderSampler
 from typing import Any, Dict, List, Tuple
-from .base import BaseDataset
 
 
-class DBpedia(BaseDataset):
+class DBpedia:
 
     def __init__(self, file_path: str):
         self.file_path_ = file_path
