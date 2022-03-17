@@ -20,6 +20,8 @@ DEPENDENCIES = [
     "scikit-learn==0.24.2",
     "spacy==3.1.0",
     "termcolor==1.1.0",
+    "torch==1.9.0",
+    "transformers==4.8.2",
     "types-termcolor==1.1.1"
 ]
 
