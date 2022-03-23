@@ -9,12 +9,12 @@ class BaseTokenizer:
         self.tokenizer_.add_tokens(["[E1]", "[E2]"])
         self.max_sequence_length_ = 512
 
-    def transform(self, samples: List[dict], pad: bool = False) -> List[dict]:
-        samples_tokenized = self._tokenize(samples, pad)
+    def transform(self, samples: List[dict]) -> List[dict]:
+        samples_tokenized = self._tokenize(samples)
         samples_ids = self._tokens_to_ids(samples_tokenized)
         return samples_ids
 
-    def _tokenize(self, samples: List[dict], pad: bool = False) -> List[dict]:
+    def _tokenize(self, samples: List[dict]) -> List[dict]:
         EXTRA_CLS_TOKEN = 1
         samples_tokenized: List[dict] = []
         for sample in samples:
@@ -39,13 +39,6 @@ class BaseTokenizer:
                 "index_1": new_index_1,
                 "index_2": new_index_2
             })
-
-        # pad
-        if pad:
-            max_length = max([len(sample["tokens"]) for sample in samples_tokenized])
-            for sample in samples_tokenized:
-                sample["tokens"] = (
-                    sample["tokens"] + ["[PAD]"] * (max_length - len(sample["tokens"])))
 
         return samples_tokenized
 

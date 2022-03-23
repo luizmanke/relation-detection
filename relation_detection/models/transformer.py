@@ -43,8 +43,7 @@ class Transformer(BaseTokenizer):
     def fit(  # type: ignore[override]
             self,
             samples: List[dict],
-            y: np.ndarray,
-            groups: List[str]
+            y: np.ndarray
     ) -> None:
         samples_tokenized = self._tokenizer_transform(samples)
         data_loader = self._create_data_loader(samples_tokenized, y, shuffle=True)
@@ -58,8 +57,7 @@ class Transformer(BaseTokenizer):
             samples: List[dict],
             for_explainer: bool = False
     ) -> Tuple[np.ndarray, np.ndarray]:
-        pad = True if for_explainer else False
-        samples_tokenized = self._tokenizer_transform(samples, pad)
+        samples_tokenized = self._tokenizer_transform(samples)
         predictions_proba = self._predict_proba(samples_tokenized)
         predictions = predictions_proba.argmax(axis=1)
         return predictions, predictions_proba
@@ -83,8 +81,8 @@ class Transformer(BaseTokenizer):
 
         return np.array(predictions_proba)
 
-    def _tokenizer_transform(self, samples: List[dict], pad: bool = False) -> List[dict]:
-        return BaseTokenizer.transform(self, samples, pad)
+    def _tokenizer_transform(self, samples: List[dict]) -> List[dict]:
+        return BaseTokenizer.transform(self, samples)
 
     @staticmethod
     def _get_device() -> torch.device:

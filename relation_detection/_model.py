@@ -30,10 +30,9 @@ class Model:
     def predict(
             self,
             samples: List[dict],
-            return_proba: bool = False,
-            for_explainer: bool = False
+            return_proba: bool = False
     ) -> np.ndarray:
-        predictions, predictions_proba = self.model_.predict(samples, for_explainer)
+        predictions, predictions_proba = self.model_.predict(samples)
         if return_proba:
             return predictions_proba
         else:
@@ -83,11 +82,11 @@ class Model:
         return gss.split(self.data_["samples"], self.data_["labels"], self.data_["groups"])
 
     def _train(self, indexes: np.ndarray, fold: int) -> None:
-        samples_train, labels_train, groups_train = self._select_samples(indexes)
+        samples_train, labels_train = self._select_samples(indexes)
 
         start_time = dt.now()
         self.model_ = self.available_models_[self.model_name_]()
-        self.model_.fit(samples_train, labels_train, groups_train)
+        self.model_.fit(samples_train, labels_train)
         elapsed_time = dt.now() - start_time
 
         labels_pred_train, _ = self.model_.predict(samples_train)
@@ -95,7 +94,7 @@ class Model:
         self.results_["train"][fold]["time"] = elapsed_time
 
     def _test(self, indexes: np.ndarray, fold: int) -> None:
-        samples_test, labels_test, _ = self._select_samples(indexes)
+        samples_test, labels_test = self._select_samples(indexes)
 
         start_time = dt.now()
         labels_pred_test, labels_proba_test = self.model_.predict(samples_test)
@@ -106,11 +105,10 @@ class Model:
         self.predictions_[indexes] = labels_pred_test
         self.predictions_proba_[indexes] = labels_proba_test
 
-    def _select_samples(self, indexes: np.ndarray) -> Tuple[List[dict], np.ndarray, List[str]]:
+    def _select_samples(self, indexes: np.ndarray) -> Tuple[List[dict], np.ndarray]:
         selected_samples = [self.data_["samples"][i] for i in indexes]
         selected_labels = self.data_["labels"][indexes]
-        selected_groups = [self.data_["groups"][i] for i in indexes]
-        return selected_samples, selected_labels, selected_groups
+        return selected_samples, selected_labels
 
     def _evaluate(
             self, labels_true: np.ndarray, labels_pred: np.ndarray, fold: int, split: str

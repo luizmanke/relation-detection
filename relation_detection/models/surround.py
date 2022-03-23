@@ -13,8 +13,7 @@ class Surround(Embedder, Classifier):
     def fit(  # type: ignore[override]
             self,
             samples: List[dict],
-            y: np.ndarray,
-            groups: List[str]
+            y: np.ndarray
     ) -> None:
         sentences = self._get_surroundings(samples)
         x = self._vectorizer_transform(sentences)
@@ -22,8 +21,7 @@ class Surround(Embedder, Classifier):
 
     def predict(  # type: ignore[override]
             self,
-            samples: List[dict],
-            for_explainer: bool = False
+            samples: List[dict]
     ) -> Tuple[np.ndarray, np.ndarray]:
         sentences = self._get_surroundings(samples)
         x = self._vectorizer_transform(sentences)
