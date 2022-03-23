@@ -54,8 +54,7 @@ class Transformer(BaseTokenizer):
 
     def predict(
             self,
-            samples: List[dict],
-            for_explainer: bool = False
+            samples: List[dict]
     ) -> Tuple[np.ndarray, np.ndarray]:
         samples_tokenized = self._tokenizer_transform(samples)
         predictions_proba = self._predict_proba(samples_tokenized)
