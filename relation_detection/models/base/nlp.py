@@ -76,8 +76,8 @@ class NLP:
         index_end_1 = indexes["index_end_1"]
         index_start_2 = indexes["index_start_2"]
         index_end_2 = indexes["index_end_2"]
-        tokens[index_start_1:index_end_1+1] = [vocab["E1"]] * (index_end_1 - index_start_1 + 1)
-        tokens[index_start_2:index_end_2+1] = [vocab["E2"]] * (index_end_2 - index_start_2 + 1)
+        tokens[index_start_1:index_end_1+1] = [vocab["[E1]"]] * (index_end_1 - index_start_1 + 1)
+        tokens[index_start_2:index_end_2+1] = [vocab["[E2]"]] * (index_end_2 - index_start_2 + 1)
         return tokens
 
     def _tokens_to_ids(self, tokens: List[str]) -> List[int]:
@@ -109,7 +109,7 @@ class NLP:
         if drop:
             random.seed(42)
             words_dropout = [
-                word if random.random() > DROPOUT_CHANCE else self.nlp_.vocab.strings["UNKNOWN"]
+                word if random.random() > DROPOUT_CHANCE else self.nlp_.vocab.strings["[UNKNOWN]"]
                 for word in words
             ]
         return words_dropout
