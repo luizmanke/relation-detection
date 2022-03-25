@@ -10,9 +10,7 @@ class NLP:
 
     def extract_info(self, samples: List[dict], word_dropout: bool = False) -> List[dict]:
         info: List[dict] = []
-
-        from tqdm import tqdm
-        for sample in tqdm(samples):
+        for sample in samples:
             doc = self._create_doc(sample)
             nlp = self._get_nlp(doc)
             indexes = self._get_entities_indexes(sample, doc)
