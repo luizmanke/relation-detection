@@ -26,7 +26,7 @@ class NLP:
 
         # create map
         base_values = [self.PAD_TOKEN, self.UNKNOWN_TOKEN, self.E1_TOKEN, self.E2_TOKEN]
-        for key in ["words", "dependencies", "part_of_speeches", "types"]:
+        for key in ["tokens", "dependencies", "part_of_speeches", "types"]:
             values = []
             for item in list_of_dicts:
                 values.extend(item[key])
@@ -34,12 +34,12 @@ class NLP:
             self.map_[key] = {value: i for i, value in enumerate(all_values)}
 
         # create vector
-        vectors_length = len(self.map_["words"])
+        vectors_length = len(self.map_["tokens"])
         vectors_size = self.nlp_.vocab.vectors.shape[1]
         self.vectors_ = np.random.uniform(-1, 1, (vectors_length, vectors_size))
-        for word, i in self.map_["words"].items():
+        for word, i in self.map_["tokens"].items():
             self.vectors_[i, :] = self.nlp_.vocab[word].vector
-        self.vectors_[self.map_["words"][self.PAD_TOKEN]] = 0  # ensure pad vector is zero
+        self.vectors_[self.map_["tokens"][self.PAD_TOKEN]] = 0  # ensure pad vector is zero
 
     def extract(self, samples: List[dict], word_dropout: bool = False) -> List[dict]:
         info: List[dict] = []
@@ -48,11 +48,11 @@ class NLP:
             nlp = self._get_nlp(doc)
             nlp_ids = self._text_to_id(nlp)
             indexes = self._get_entities_indexes(sample, doc)
-            tokens_masked = self._mask_entities(nlp_ids["words"], indexes)
+            tokens_masked = self._mask_entities(nlp_ids["tokens"], indexes)
             positions = self._get_positions(len(tokens_masked), indexes)
             tokens_dropout = self._word_dropout(tokens_masked, word_dropout)
             info.append({
-                "words": tokens_dropout,
+                "tokens": tokens_dropout,
                 "heads": nlp_ids["heads"],
                 "dependencies": nlp_ids["dependencies"],
                 "part_of_speeches": nlp_ids["part_of_speeches"],
@@ -67,7 +67,7 @@ class NLP:
 
     def _get_nlp(self, doc) -> dict:
         return {
-            "words": [token.text for token in doc],
+            "tokens": [token.text for token in doc],
             "heads": [token.head.i for token in doc],
             "dependencies": [token.dep for token in doc],
             "part_of_speeches": [token.pos for token in doc],
@@ -116,8 +116,8 @@ class NLP:
         index_end_1 = indexes["index_end_1"]
         index_start_2 = indexes["index_start_2"]
         index_end_2 = indexes["index_end_2"]
-        tokens[index_start_1:index_end_1+1] = [self.map_["words"]["[E1]"]] * (index_end_1 - index_start_1 + 1)
-        tokens[index_start_2:index_end_2+1] = [self.map_["words"]["[E2]"]] * (index_end_2 - index_start_2 + 1)
+        tokens[index_start_1:index_end_1+1] = [self.map_["tokens"][self.E1_TOKEN]] * (index_end_1 - index_start_1 + 1)
+        tokens[index_start_2:index_end_2+1] = [self.map_["tokens"][self.E2_TOKEN]] * (index_end_2 - index_start_2 + 1)
         return tokens
 
     def _tokens_to_ids(self, tokens: List[str]) -> List[int]:
@@ -149,7 +149,7 @@ class NLP:
         if drop:
             random.seed(42)
             words_dropout = [
-                word if random.random() > DROPOUT_CHANCE else self.map_["words"][self.UNKNOWN_TOKEN]
+                word if random.random() > DROPOUT_CHANCE else self.map_["tokens"][self.UNKNOWN_TOKEN]
                 for word in words
             ]
         return words_dropout
