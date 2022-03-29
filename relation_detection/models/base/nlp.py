@@ -68,7 +68,7 @@ class NLP:
     def _get_nlp(self, doc) -> dict:
         return {
             "tokens": [token.text for token in doc],
-            "heads": [token.head.i for token in doc],
+            "heads": [token.head.i+1 if token.dep_ != "ROOT" else 0 for token in doc],
             "dependencies": [token.dep for token in doc],
             "part_of_speeches": [token.pos for token in doc],
             "types": [token.ent_type for token in doc]
