@@ -78,8 +78,8 @@ class NLP:
         assert self.maps_ != {}
         nlp = {**nlp}
         for key in self.maps_:
-            map = self.maps_[key]
-            nlp[key] = [map[x] if x in map else map[self.UNKNOWN_TOKEN] for x in nlp[key]]
+            map_ = self.maps_[key]
+            nlp[key] = [map_[x] if x in map_ else map_[self.UNKNOWN_TOKEN] for x in nlp[key]]
         return nlp
 
     def _get_entities_indexes(self, sample: dict, doc) -> dict:
@@ -119,9 +119,6 @@ class NLP:
         tokens[index_start_1:index_end_1+1] = [self.maps_["tokens"][self.E1_TOKEN]] * (index_end_1 - index_start_1 + 1)
         tokens[index_start_2:index_end_2+1] = [self.maps_["tokens"][self.E2_TOKEN]] * (index_end_2 - index_start_2 + 1)
         return tokens
-
-    def _tokens_to_ids(self, tokens: List[str]) -> List[int]:
-        return [self.nlp_.vocab.strings[x] for x in tokens]
 
     @staticmethod
     def _get_positions(length: int, indexes: dict) -> dict:
