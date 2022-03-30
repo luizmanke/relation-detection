@@ -144,7 +144,6 @@ class NLP:
         DROPOUT_CHANCE = 0.04
         words_dropout = [word for word in words]
         if drop:
-            random.seed(42)
             words_dropout = [
                 word if random.random() > DROPOUT_CHANCE else self.maps_["tokens"][self.UNKNOWN_TOKEN]
                 for word in words
