@@ -5,6 +5,8 @@ from sklearn import metrics
 from sklearn.model_selection import GroupKFold
 from tqdm import tqdm
 from typing import Any, Dict, List, Tuple
+
+from .models.graph import Graph
 from .models.surround import Surround
 from .models.transformer import Transformer
 from .utils import print_sentence
@@ -14,6 +16,7 @@ class Model:
 
     n_folds_ = 5
     available_models_ = {
+        "graph": Graph,
         "surround": Surround,
         "transformer": Transformer
     }
