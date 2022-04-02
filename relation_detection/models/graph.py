@@ -10,6 +10,7 @@ from torch.nn import functional as F
 
 from .base import tree
 from .base.nlp import NLP
+from ..utils import get_device
 
 # Globals
 PAD_ID = 0
@@ -46,10 +47,9 @@ class Graph(NLP):
         NLP.fit(self, samples)
         inputs = NLP.extract(self, samples, word_dropout=True)
         data_loader = self._create_data_loader(inputs, y, shuffle=True)
-        device = self._get_device()
-        self._create_model(device)
-        self._set_up_optimizers(device)
-        self._fit(data_loader, device)
+        self._create_model()
+        self._set_up_optimizers()
+        self._fit(data_loader)
 
     def predict(  # type: ignore[override]
         self,
@@ -58,12 +58,12 @@ class Graph(NLP):
 
         inputs = NLP.extract(self, samples, word_dropout=False)
         data_loader = self._create_data_loader(inputs, y=None, shuffle=False)
-        device = self._get_device()
-        predictions_proba = self._predict_proba(data_loader, device)
+        predictions_proba = self._predict_proba(data_loader)
         predictions = predictions_proba.argmax(axis=1)
         return predictions, predictions_proba
 
-    def _predict_proba(self, data_loader: DataLoader, device: torch.device) -> np.ndarray:
+    def _predict_proba(self, data_loader: DataLoader) -> np.ndarray:
+        device = get_device()
         predictions_proba = []
         for batch in data_loader:
 
@@ -127,20 +127,13 @@ class Graph(NLP):
             "indexes": indexes_sorted
         }
 
-    @staticmethod
-    def _get_device() -> torch.device:
-        if not torch.cuda.is_available():
-            device = torch.device("cpu")
-        else:
-            device = torch.device("cuda:0")
-        return device
+    def _create_model(self) -> None:
+        self.model_ = BaseCNN(self.vectors_, self.maps_)
+        self.model_.to(device=get_device())
 
-    def _create_model(self, device: torch.device) -> None:
-        self.model_ = BaseCNN(self.vectors_, self.maps_, device)
-        self.model_.to(device=device)
+    def _set_up_optimizers(self) -> None:
 
-    def _set_up_optimizers(self, device: torch.device) -> None:
-
+        device = get_device()
         self._loss_function = nn.CrossEntropyLoss().to(device)
 
         parameters = [p for p in self.model_.parameters() if p.requires_grad]
@@ -150,8 +143,9 @@ class Graph(NLP):
             weight_decay=self.L2_REGULARIZATION
         )
 
-    def _fit(self, data_loader: DataLoader, device: torch.device) -> None:
+    def _fit(self, data_loader: DataLoader) -> None:
 
+        device = get_device()
         for epoch in range(self.N_EPOCHS):
             for batch in data_loader:
 
@@ -197,10 +191,9 @@ class BaseCNN(nn.Module):
     RNN_HIDDEN_SIZE = 200
     RNN_N_LAYERS = 1
 
-    def __init__(self, embeddings: np.ndarray, maps: dict, device: torch.device) -> None:
+    def __init__(self, embeddings: np.ndarray, maps: dict) -> None:
         super().__init__()
-        self._device = device
-        self._tree = Tree(device)
+        self._tree = Tree()
         self._embeddings = Embeddings(
             embeddings,
             maps,
@@ -231,7 +224,7 @@ class BaseCNN(nn.Module):
     def forward(self, inputs: dict) -> dict:
         tree_outputs = self._tree.get_matrix(inputs)
         embeddings_outputs = self._embeddings(inputs)
-        rnn_outputs = self._rnn({**inputs, **embeddings_outputs}, self._device)
+        rnn_outputs = self._rnn({**inputs, **embeddings_outputs})
         cnn_outputs = self._cnn({**inputs, **tree_outputs, **rnn_outputs})
         mlp_outputs = self._mlp({**inputs, **cnn_outputs})
         classifier_outputs = self._classifier(mlp_outputs)
@@ -240,8 +233,8 @@ class BaseCNN(nn.Module):
 
 class Tree:
 
-    def __init__(self, device: torch.device) -> None:
-        self._device = device
+    def __init__(self) -> None:
+        pass
 
     def get_matrix(self, inputs: dict) -> dict:
         heads = inputs["heads"].cpu().numpy()
@@ -251,7 +244,10 @@ class Tree:
         trees = [tree.head_to_tree(heads[i], lengths[i]) for i in range(len(lengths))]
         matrix = [tree.tree_to_matrix(item, max_length) for item in trees]
 
-        return {"tree_matrix": Variable(torch.from_numpy(np.concatenate(matrix, axis=0))).to(self._device)}
+        device = get_device()
+        tree_matrix = Variable(torch.from_numpy(np.concatenate(matrix, axis=0))).to(device)
+
+        return {"tree_matrix": tree_matrix}
 
 
 class Embeddings(nn.Module):
@@ -315,9 +311,10 @@ class RNN(nn.Module):
         )
         self._dropout = nn.Dropout(dropout)
 
-    def forward(self, inputs: dict, device: torch.device) -> dict:
+    def forward(self, inputs: dict) -> dict:
 
         # get rnn zero state
+        device = get_device()
         batch_size = inputs["tokens"].size()[0]
         total_layers = self._n_hidden_layers * 2 if self._bidirectional else self._n_hidden_layers
         state_shape = (total_layers, batch_size, self._hidden_size)

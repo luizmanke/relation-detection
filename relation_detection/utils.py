@@ -1,4 +1,13 @@
+import torch
 from termcolor import colored
+
+
+def get_device() -> torch.device:
+    if not torch.cuda.is_available():
+        device = torch.device("cpu")
+    else:
+        device = torch.device("cuda:0")
+    return device
 
 
 def print_sentence(sample: dict) -> None:
