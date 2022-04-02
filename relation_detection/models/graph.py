@@ -48,7 +48,7 @@ class Graph(NLP):
         data_loader = self._create_data_loader(inputs, y, shuffle=True)
         device = self._get_device()
         self._create_model(device)
-        self._set_up_optimizers()
+        self._set_up_optimizers(device)
         self._fit(data_loader, device)
 
     def predict(  # type: ignore[override]
@@ -139,9 +139,9 @@ class Graph(NLP):
         self.model_ = BaseCNN(self.vectors_, self.maps_, device)
         self.model_.to(device=device)
 
-    def _set_up_optimizers(self) -> None:
+    def _set_up_optimizers(self, device: torch.device) -> None:
 
-        self._loss_function = nn.CrossEntropyLoss()
+        self._loss_function = nn.CrossEntropyLoss().to(device)
 
         parameters = [p for p in self.model_.parameters() if p.requires_grad]
         self._optimizer = torch.optim.SGD(
@@ -166,6 +166,7 @@ class Graph(NLP):
                 outputs = self.model_(inputs)
 
                 # compute loss
+                print(outputs["logits"].get_device(), batch["labels"].get_device())
                 loss = self._loss_function(outputs["logits"], batch["labels"])
                 loss += self.POOLING_L2 * (outputs["pooling"] ** 2).sum(1).mean()
 
