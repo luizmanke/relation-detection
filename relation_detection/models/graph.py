@@ -160,8 +160,7 @@ class Graph(NLP):
                 outputs = self.model_(inputs)
 
                 # compute loss
-                print(outputs["logits"].get_device(), batch["labels"].get_device())
-                loss = self._loss_function(outputs["logits"], batch["labels"])
+                loss = self._loss_function(outputs["logits"], inputs["labels"])
                 loss += self.POOLING_L2 * (outputs["pooling"] ** 2).sum(1).mean()
 
                 # optimize
