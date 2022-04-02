@@ -136,7 +136,7 @@ class Graph(NLP):
         return device
 
     def _create_model(self, device: torch.device) -> None:
-        self.model_ = BaseCNN(self.vectors_, self.maps_)
+        self.model_ = BaseCNN(self.vectors_, self.maps_, device)
         self.model_.to(device=device)
 
     def _set_up_optimizers(self) -> None:
@@ -196,8 +196,9 @@ class BaseCNN(nn.Module):
     RNN_HIDDEN_SIZE = 200
     RNN_N_LAYERS = 1
 
-    def __init__(self, embeddings: np.ndarray, maps: dict) -> None:
+    def __init__(self, embeddings: np.ndarray, maps: dict, device: torch.device) -> None:
         super().__init__()
+        self._device = device
         self._tree = Tree()
         self._embeddings = Embeddings(
             embeddings,
@@ -229,7 +230,7 @@ class BaseCNN(nn.Module):
     def forward(self, inputs: dict) -> dict:
         tree_outputs = self._tree.get_matrix(inputs)
         embeddings_outputs = self._embeddings(inputs)
-        rnn_outputs = self._rnn({**inputs, **embeddings_outputs})
+        rnn_outputs = self._rnn({**inputs, **embeddings_outputs}, self._device)
         cnn_outputs = self._cnn({**inputs, **tree_outputs, **rnn_outputs})
         mlp_outputs = self._mlp({**inputs, **cnn_outputs})
         classifier_outputs = self._classifier(mlp_outputs)
@@ -314,13 +315,13 @@ class RNN(nn.Module):
         )
         self._dropout = nn.Dropout(dropout)
 
-    def forward(self, inputs: dict) -> dict:
+    def forward(self, inputs: dict, device: torch.device) -> dict:
 
         # get rnn zero state
         batch_size = inputs["tokens"].size()[0]
         total_layers = self._n_hidden_layers * 2 if self._bidirectional else self._n_hidden_layers
         state_shape = (total_layers, batch_size, self._hidden_size)
-        h0 = c0 = Variable(torch.zeros(*state_shape), requires_grad=False)
+        h0 = c0 = Variable(torch.zeros(*state_shape), requires_grad=False).to(device)
 
         # rnn layers
         lengths = list(inputs["masks"].data.eq(PAD_ID).long().sum(1).squeeze())
