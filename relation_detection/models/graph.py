@@ -69,7 +69,6 @@ class Graph(NLP):
 
     def _fit(self, data_loader: DataLoader) -> None:
 
-        device = get_device()
         for epoch in range(self.N_EPOCHS):
             for batch in data_loader:
 
@@ -78,9 +77,7 @@ class Graph(NLP):
                 self._optimizer.zero_grad()
 
                 # train model
-                inputs = {}
-                for key, value in batch.items():
-                    inputs[key] = value.to(device) if key != "indexes" else value
+                inputs = self.batch_to_device(batch)
                 outputs = self.model_(inputs)
 
                 # compute loss
@@ -110,15 +107,11 @@ class Graph(NLP):
         return predictions, predictions_proba
 
     def _predict_proba(self, data_loader: DataLoader) -> np.ndarray:
-        device = get_device()
         predictions_proba = []
         for batch in data_loader:
 
-            inputs = {}
-            for key, value in batch.items():
-                inputs[key] = value.to(device) if key != "indexes" else value
-
             self.model_.eval()
+            inputs = self.batch_to_device(batch)
             outputs = self.model_(inputs)
             predictions_proba += F.softmax(outputs["logits"], dim=1).data.cpu().numpy().tolist()
 
@@ -173,6 +166,16 @@ class Graph(NLP):
             "labels": torch.LongTensor(batch_refactored["label"]) if "label" in batch_refactored else None,
             "indexes": indexes_sorted
         }
+
+    @staticmethod
+    def batch_to_device(batch: dict) -> dict:
+        inputs = {}
+        device = get_device()
+        for key, value in batch.items():
+            if key != "indexes" and value is not None:
+                value = value.to(device)
+            inputs[key] = value
+        return inputs
 
 
 class BaseCNN(nn.Module):
