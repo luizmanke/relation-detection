@@ -51,6 +51,53 @@ class Graph(NLP):
         self._set_up_optimizers()
         self._fit(data_loader)
 
+    def _create_model(self) -> None:
+        self.model_ = BaseCNN(self.vectors_, self.maps_)
+        self.model_.to(device=get_device())
+
+    def _set_up_optimizers(self) -> None:
+
+        device = get_device()
+        self._loss_function = nn.CrossEntropyLoss().to(device)
+
+        parameters = [p for p in self.model_.parameters() if p.requires_grad]
+        self._optimizer = torch.optim.SGD(
+            parameters,
+            lr=self.LEARNING_RATE,
+            weight_decay=self.L2_REGULARIZATION
+        )
+
+    def _fit(self, data_loader: DataLoader) -> None:
+
+        device = get_device()
+        for epoch in range(self.N_EPOCHS):
+            for batch in data_loader:
+
+                # prepare model
+                self.model_.train()
+                self._optimizer.zero_grad()
+
+                # train model
+                inputs = {}
+                for key, value in batch.items():
+                    inputs[key] = value.to(device) if key != "indexes" else value
+                outputs = self.model_(inputs)
+
+                # compute loss
+                loss = self._loss_function(outputs["logits"], inputs["labels"])
+                loss += self.POOLING_L2 * (outputs["pooling"] ** 2).sum(1).mean()
+
+                # optimize
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model_.parameters(), self.GRADIENT_MAX_NORM)
+                self._optimizer.step()
+
+                # update learning rate
+                if epoch > self.DECAY_MIN_EPOCHS:
+                    new_lerning_rate = self.LEARNING_RATE * (epoch ** self.DECAY_LEARNING_RATE)
+                    for param_group in self._optimizer.param_groups:
+                        param_group["lr"] = new_lerning_rate
+
     def predict(  # type: ignore[override]
         self,
         samples: List[dict]
@@ -126,53 +173,6 @@ class Graph(NLP):
             "labels": torch.LongTensor(batch_refactored["label"]) if "label" in batch_refactored else None,
             "indexes": indexes_sorted
         }
-
-    def _create_model(self) -> None:
-        self.model_ = BaseCNN(self.vectors_, self.maps_)
-        self.model_.to(device=get_device())
-
-    def _set_up_optimizers(self) -> None:
-
-        device = get_device()
-        self._loss_function = nn.CrossEntropyLoss().to(device)
-
-        parameters = [p for p in self.model_.parameters() if p.requires_grad]
-        self._optimizer = torch.optim.SGD(
-            parameters,
-            lr=self.LEARNING_RATE,
-            weight_decay=self.L2_REGULARIZATION
-        )
-
-    def _fit(self, data_loader: DataLoader) -> None:
-
-        device = get_device()
-        for epoch in range(self.N_EPOCHS):
-            for batch in data_loader:
-
-                # prepare model
-                self.model_.train()
-                self._optimizer.zero_grad()
-
-                # train model
-                inputs = {}
-                for key, value in batch.items():
-                    inputs[key] = value.to(device) if key != "indexes" else value
-                outputs = self.model_(inputs)
-
-                # compute loss
-                loss = self._loss_function(outputs["logits"], inputs["labels"])
-                loss += self.POOLING_L2 * (outputs["pooling"] ** 2).sum(1).mean()
-
-                # optimize
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model_.parameters(), self.GRADIENT_MAX_NORM)
-                self._optimizer.step()
-
-                # update learning rate
-                if epoch > self.DECAY_MIN_EPOCHS:
-                    new_lerning_rate = self.LEARNING_RATE * (epoch ** self.DECAY_LEARNING_RATE)
-                    for param_group in self._optimizer.param_groups:
-                        param_group["lr"] = new_lerning_rate
 
 
 class BaseCNN(nn.Module):
