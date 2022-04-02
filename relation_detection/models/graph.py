@@ -199,7 +199,7 @@ class BaseCNN(nn.Module):
     def __init__(self, embeddings: np.ndarray, maps: dict, device: torch.device) -> None:
         super().__init__()
         self._device = device
-        self._tree = Tree()
+        self._tree = Tree(device)
         self._embeddings = Embeddings(
             embeddings,
             maps,
@@ -239,11 +239,10 @@ class BaseCNN(nn.Module):
 
 class Tree:
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, device: torch.device) -> None:
+        self._device = device
 
-    @staticmethod
-    def get_matrix(inputs: dict) -> dict:
+    def get_matrix(self, inputs: dict) -> dict:
         heads = inputs["heads"].cpu().numpy()
         lengths = (inputs["masks"].data.cpu().numpy() == 0).astype(np.int64).sum(1)
         max_length = max(lengths)
@@ -251,7 +250,7 @@ class Tree:
         trees = [tree.head_to_tree(heads[i], lengths[i]) for i in range(len(lengths))]
         matrix = [tree.tree_to_matrix(item, max_length) for item in trees]
 
-        return {"tree_matrix": Variable(torch.from_numpy(np.concatenate(matrix, axis=0)))}
+        return {"tree_matrix": Variable(torch.from_numpy(np.concatenate(matrix, axis=0))).to(self._device)}
 
 
 class Embeddings(nn.Module):
