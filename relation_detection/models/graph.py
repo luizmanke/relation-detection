@@ -30,7 +30,7 @@ class Graph(NLP):
     DECAY_MIN_EPOCHS = 5
     DECAY_LEARNING_RATE = 0.98
     GRADIENT_MAX_NORM = 5
-    LEARNING_RATE = 1
+    LEARNING_RATE = 0.3
     L2_REGULARIZATION = 0
     N_EPOCHS = 100
     POOLING_L2 = 0.003
@@ -89,11 +89,11 @@ class Graph(NLP):
                 torch.nn.utils.clip_grad_norm_(self.model_.parameters(), self.GRADIENT_MAX_NORM)
                 self._optimizer.step()
 
-                # update learning rate
-                if epoch > self.DECAY_MIN_EPOCHS:
-                    new_lerning_rate = self.LEARNING_RATE * (epoch ** self.DECAY_LEARNING_RATE)
-                    for param_group in self._optimizer.param_groups:
-                        param_group["lr"] = new_lerning_rate
+            # update learning rate
+            if epoch > self.DECAY_MIN_EPOCHS:
+                new_learning_rate = self.LEARNING_RATE * (self.DECAY_LEARNING_RATE ** epoch)
+                for param_group in self._optimizer.param_groups:
+                    param_group["lr"] = new_learning_rate
 
     def predict(  # type: ignore[override]
         self,
@@ -113,7 +113,9 @@ class Graph(NLP):
             self.model_.eval()
             inputs = self.batch_to_device(batch)
             outputs = self.model_(inputs)
-            predictions_proba += F.softmax(outputs["logits"], dim=1).data.cpu().numpy().tolist()
+            predictions_proba_unsorted = F.softmax(outputs["logits"], dim=1).data.cpu().numpy().tolist()
+            _, predictions_proba_sorted = zip(*sorted(zip(inputs["indexes"], predictions_proba_unsorted)))
+            predictions_proba += predictions_proba_sorted
 
         return np.array(predictions_proba)
 
@@ -124,7 +126,7 @@ class Graph(NLP):
         shuffle: bool = False
     ) -> DataLoader:
 
-        data = samples
+        data = [{**sample} for sample in samples]
         if y is not None:
             for sample, label in zip(data, y):
                 sample["label"] = label
