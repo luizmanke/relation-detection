@@ -1,12 +1,14 @@
 from random import Random
 from typing import Any, Dict, Optional
 from .datasets.dbpedia import DBpedia
+from .datasets.news import News
 
 
 class Dataset:
 
     available_sets_ = {
-        "dbpedia": DBpedia
+        "dbpedia": DBpedia,
+        "news": News
     }
 
     def __init__(
