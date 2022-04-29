@@ -21,8 +21,9 @@ class Model:
         "transformer": Transformer
     }
 
-    def __init__(self, model_name: str) -> None:
+    def __init__(self, model_name: str, **kwargs) -> None:
         self.model_name_ = model_name
+        self.kwargs_ = kwargs
 
     def train(self, dataset: Any) -> None:
         self._train_setup(dataset)
@@ -88,7 +89,7 @@ class Model:
         samples_train, labels_train = self._select_samples(indexes)
 
         start_time = dt.now()
-        self.model_ = self.available_models_[self.model_name_]()
+        self.model_ = self.available_models_[self.model_name_](**self.kwargs_)
         self.model_.fit(samples_train, labels_train)
         elapsed_time = dt.now() - start_time
 
