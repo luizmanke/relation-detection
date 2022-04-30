@@ -1,7 +1,7 @@
 import nltk
 import numpy as np
 import pandas as pd
-from typing import List, Tuple
+from typing import Any, Dict
 
 
 class News:
@@ -16,8 +16,21 @@ class News:
         self._mark_entities()
         self._rename_relations()
 
-    def get_data(self) -> Tuple[List[dict], np.ndarray, List[str]]:
-        return self._get_data()
+    def get_data(self) -> Dict[str, Any]:
+        KEYS = ["tokens", "index_1", "index_2", "relation", "content"]
+        samples = [sample for sample in self.samples_ if sample["relation"] != -1]
+        selected_samples = [
+            {
+                key: value for key, value in sample.items() if key in KEYS
+            } for sample in samples
+        ]
+        selected_labels = np.array([sample.pop("relation") for sample in selected_samples])
+        selected_groups = [sample.pop("content") for sample in selected_samples]
+        return {
+            "samples": selected_samples,
+            "labels": selected_labels,
+            "groups": selected_groups
+        }
 
     @staticmethod
     def _download_nltk_model() -> None:
@@ -72,15 +85,3 @@ class News:
     def _rename_relations(self) -> None:
         for sample in self.samples_:
             sample["relation"] = sample["label"]
-
-    def _get_data(self) -> Tuple[List[dict], np.ndarray, List[str]]:
-        KEYS = ["tokens", "index_1", "index_2", "relation", "content"]
-        samples = [sample for sample in self.samples_ if sample["relation"] != -1]
-        selected_samples = [
-            {
-                key: value for key, value in sample.items() if key in KEYS
-            } for sample in samples
-        ]
-        selected_y = np.array([sample.pop("relation") for sample in selected_samples])
-        selected_groups = [sample.pop("content") for sample in selected_samples]
-        return selected_samples, selected_y, selected_groups
