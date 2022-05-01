@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from datetime import datetime as dt
 from sklearn import metrics
 from sklearn.metrics import ConfusionMatrixDisplay
@@ -76,6 +77,13 @@ class Model:
             self.data_["labels"],
             display_labels=["Not related", "Related"],
             normalize="true"
+        )
+
+    def plot_probabilities(self) -> None:
+        sns.kdeplot(
+            data=pd.DataFrame({"label": self.data_["labels"], "proba": self.predictions_proba_[:, 1]}),
+            x="proba",
+            hue="label"
         )
 
     def print_sentence(self, index: int) -> None:
