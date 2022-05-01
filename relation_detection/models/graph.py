@@ -97,7 +97,8 @@ class Graph(NLP):
 
     def predict(  # type: ignore[override]
         self,
-        samples: List[dict]
+        samples: List[dict],
+        for_explainer: bool = False
     ) -> Tuple[np.ndarray, np.ndarray]:
 
         inputs = NLP.extract(self, samples, word_dropout=False)

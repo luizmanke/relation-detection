@@ -54,9 +54,11 @@ class Transformer(BaseTokenizer):
 
     def predict(
             self,
-            samples: List[dict]
+            samples: List[dict],
+            for_explainer: bool = False
     ) -> Tuple[np.ndarray, np.ndarray]:
-        samples_tokenized = self._tokenizer_transform(samples)
+        pad = True if for_explainer else False
+        samples_tokenized = self._tokenizer_transform(samples, pad)
         predictions_proba = self._predict_proba(samples_tokenized)
         predictions = predictions_proba.argmax(axis=1)
         return predictions, predictions_proba
@@ -80,8 +82,8 @@ class Transformer(BaseTokenizer):
 
         return np.array(predictions_proba)
 
-    def _tokenizer_transform(self, samples: List[dict]) -> List[dict]:
-        return BaseTokenizer.transform(self, samples)
+    def _tokenizer_transform(self, samples: List[dict], pad: bool = False) -> List[dict]:
+        return BaseTokenizer.transform(self, samples, pad)
 
     @staticmethod
     def _get_device() -> torch.device:

@@ -37,9 +37,10 @@ class Model:
     def predict(
             self,
             samples: List[dict],
-            return_proba: bool = False
+            return_proba: bool = False,
+            for_explainer: bool = False
     ) -> np.ndarray:
-        predictions, predictions_proba = self.model_.predict(samples)
+        predictions, predictions_proba = self.model_.predict(samples, for_explainer)
         if return_proba:
             return predictions_proba
         else:
