@@ -13,6 +13,7 @@ class PostInstallCommand(install):
 
 DEPENDENCIES = [
     "imbalanced-learn==0.8.0",
+    "lime==0.2.0.1",
     "matplotlib==3.5.1",
     "nltk==3.6.2",
     "numpy==1.21.0",
