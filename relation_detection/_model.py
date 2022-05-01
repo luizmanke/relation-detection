@@ -77,12 +77,13 @@ class Model:
         ConfusionMatrixDisplay.from_predictions(
             self.predictions_,
             self.data_["labels"],
-            display_labels=["Not related", "Related"],
             normalize="true",
             ax=ax
         )
+        ax.set_xlabel("Predicted label", fontsize=16, labelpad=16)
+        ax.set_ylabel("True label", fontsize=16, labelpad=16)
 
-    def plot_probabilities(self) -> None:
+    def plot_kde(self) -> None:
         _, ax = plt.subplots(figsize=(16, 6))
         sns.kdeplot(
             data=pd.DataFrame({"label": self.data_["labels"], "proba": self.predictions_proba_[:, 1]}),
@@ -90,6 +91,9 @@ class Model:
             hue="label",
             ax=ax
         )
+        ax.set_xlabel("Probability", fontsize=16, labelpad=16)
+        ax.set_ylabel("Density", fontsize=16, labelpad=16)
+        ax.grid(True)
 
     def print_sentence(self, index: int) -> None:
         sample = {key: value for key, value in self.data_["samples"][index].items()}
