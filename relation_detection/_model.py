@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from datetime import datetime as dt
+from matplotlib import pyplot as plt
 from sklearn import metrics
 from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.model_selection import GroupKFold
@@ -72,18 +73,22 @@ class Model:
         return df.transpose()
 
     def plot_confusion_matrix(self) -> None:
+        _, ax = plt.subplots(figsize=(10, 6))
         ConfusionMatrixDisplay.from_predictions(
             self.predictions_,
             self.data_["labels"],
             display_labels=["Not related", "Related"],
-            normalize="true"
+            normalize="true",
+            ax=ax
         )
 
     def plot_probabilities(self) -> None:
+        _, ax = plt.subplots(figsize=(16, 6))
         sns.kdeplot(
             data=pd.DataFrame({"label": self.data_["labels"], "proba": self.predictions_proba_[:, 1]}),
             x="proba",
-            hue="label"
+            hue="label",
+            ax=ax
         )
 
     def print_sentence(self, index: int) -> None:
