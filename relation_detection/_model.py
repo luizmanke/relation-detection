@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime as dt
 from sklearn import metrics
+from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.model_selection import GroupKFold
 from tqdm import tqdm
 from typing import Any, Dict, List, Tuple
@@ -68,6 +69,14 @@ class Model:
         df = pd.DataFrame(results)
         df.index.name = "fold"
         return df.transpose()
+
+    def plot_confusion_matrix(self) -> None:
+        ConfusionMatrixDisplay.from_predictions(
+            self.predictions_,
+            self.data_["labels"],
+            display_labels=["Not related", "Related"],
+            normalize="true"
+        )
 
     def print_sentence(self, index: int) -> None:
         sample = {key: value for key, value in self.data_["samples"][index].items()}
