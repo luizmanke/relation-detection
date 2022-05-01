@@ -8,7 +8,6 @@ class News:
 
     def __init__(self, file_path: str) -> None:
         self.file_path_ = file_path
-        self._download_nltk_model()
         self._load_text()
         self._extract_sentences()
         self._span_entities()
@@ -31,15 +30,6 @@ class News:
             "labels": selected_labels,
             "groups": selected_groups
         }
-
-    @staticmethod
-    def _download_nltk_model() -> None:
-        try:
-            nltk.data.find("corpora/stopwords")
-            nltk.data.find("tokenizers/punkt")
-        except Exception:
-            nltk.download("stopwords", quiet=True)
-            nltk.download("punkt", quiet=True)
 
     def _load_text(self) -> None:
         self.text_ = pd.read_csv(self.file_path_)
