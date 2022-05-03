@@ -73,14 +73,6 @@ class Model:
         df.index.name = "fold"
         return df.transpose()
 
-    def plot_scores(self) -> None:
-        _, ax = plt.subplots(figsize=(16, 6))
-        df = self.get_results().transpose()["test"]
-        df[["f1", "precision", "recall"]].plot.bar(ax=ax)
-        ax.set_xlabel("Fold", fontsize=16, labelpad=16)
-        ax.set_ylabel("Score", fontsize=16, labelpad=16)
-        ax.grid(True)
-
     def plot_confusion_matrix(self) -> None:
         _, ax = plt.subplots(figsize=(10, 6))
         ConfusionMatrixDisplay.from_predictions(
