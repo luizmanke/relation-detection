@@ -26,7 +26,6 @@ if torch.cuda.device_count() > 0 and torch.cuda.is_available():
 class Transformer(BaseTokenizer):
 
     WARMUP_RATIO = 0.1
-    LEARNING_RATE = 3e-5
     ADAM_EPSILON = 1e-6
     GRADIENT_MAX_NORM = 1
 
@@ -129,7 +128,7 @@ class Transformer(BaseTokenizer):
             len(data_loader) * self.n_epochs_ // self.n_gradient_accumulation_steps_)
         num_warmup_steps = int(num_training_steps * self.WARMUP_RATIO)
         self._optimizer = AdamW(
-            self.model_.parameters(), lr=self.LEARNING_RATE, eps=self.ADAM_EPSILON)
+            self.model_.parameters(), lr=self.learning_rate_, eps=self.ADAM_EPSILON)
         self._scheduler = get_linear_schedule_with_warmup(
             self._optimizer,
             num_warmup_steps=num_warmup_steps,
