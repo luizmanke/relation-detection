@@ -25,17 +25,26 @@ if torch.cuda.device_count() > 0 and torch.cuda.is_available():
 
 class Transformer(BaseTokenizer):
 
-    # hyperparameters
-    BATCH_SIZE = 32
-    GRADIENT_N_ACCUMULATION_STEPS = 2
-    N_EPOCHS = 5
     WARMUP_RATIO = 0.1
     LEARNING_RATE = 3e-5
     ADAM_EPSILON = 1e-6
     GRADIENT_MAX_NORM = 1
 
-    def __init__(self) -> None:
+    def __init__(
+            self,
+            batch_size: int = 32,
+            dropout_rate: float = 0.1,
+            learning_rate: float = 3e-5,
+            n_epochs: int = 5,
+            n_gradient_accumulation_steps: int = 2
+    ) -> None:
         self.transformer_name_ = "neuralmind/bert-large-portuguese-cased"
+        self.batch_size_ = batch_size
+        self.dropout_rate_ = dropout_rate
+        self.learning_rate_ = learning_rate
+        self.n_epochs_ = n_epochs
+        self.n_gradient_accumulation_steps_ = n_gradient_accumulation_steps
+
         BaseTokenizer.__init__(self, self.transformer_name_)
         if not torch.cuda.is_available():
             print("WARNING: GPU not found.")
@@ -105,19 +114,19 @@ class Transformer(BaseTokenizer):
                 sample["label"] = label
         return DataLoader(
             data,  # type: ignore
-            batch_size=self.BATCH_SIZE,
+            batch_size=self.batch_size_,
             shuffle=shuffle,
             collate_fn=self._collate_fn
         )
 
     def _create_model(self, device: torch.device) -> None:
-        self.model_ = BaseTransformer(self.transformer_name_)
+        self.model_ = BaseTransformer(self.transformer_name_, self.dropout_rate_)
         self.model_.to(device=device)
         self.model_._encoder.resize_token_embeddings(len(self.tokenizer_))
 
     def _set_up_optimizers(self, data_loader: DataLoader) -> None:
         num_training_steps = int(
-            len(data_loader) * self.N_EPOCHS // self.GRADIENT_N_ACCUMULATION_STEPS)
+            len(data_loader) * self.n_epochs_ // self.n_gradient_accumulation_steps_)
         num_warmup_steps = int(num_training_steps * self.WARMUP_RATIO)
         self._optimizer = AdamW(
             self.model_.parameters(), lr=self.LEARNING_RATE, eps=self.ADAM_EPSILON)
@@ -130,7 +139,7 @@ class Transformer(BaseTokenizer):
 
     def _fit(self, data_loader: DataLoader, device: torch.device) -> None:
         num_steps = 0
-        for _ in range(self.N_EPOCHS):
+        for _ in range(self.n_epochs_):
             self.model_.zero_grad()
             for step, batch in enumerate(data_loader):
 
@@ -146,11 +155,11 @@ class Transformer(BaseTokenizer):
                 outputs = self.model_(**inputs)
 
                 # compute loss
-                loss = outputs[0] / self.GRADIENT_N_ACCUMULATION_STEPS
+                loss = outputs[0] / self.n_gradient_accumulation_steps_
                 self._scaler.scale(loss).backward()
 
                 # optimize
-                if step % self.GRADIENT_N_ACCUMULATION_STEPS == 0:
+                if step % self.n_gradient_accumulation_steps_ == 0:
                     num_steps += 1
 
                     # clip gradient
@@ -197,11 +206,9 @@ class Transformer(BaseTokenizer):
 
 class BaseTransformer(nn.Module):
 
-    # hyperparameters
     N_LABELS = 2
-    DROPOUT_RATE = 0.1
 
-    def __init__(self, transformer_name: str) -> None:
+    def __init__(self, transformer_name: str, dropout_rate: float) -> None:
         super().__init__()
         config = AutoConfig.from_pretrained(transformer_name, num_labels=self.N_LABELS)
         config.gradient_checkpointing = True
@@ -210,7 +217,7 @@ class BaseTransformer(nn.Module):
         self._classifier = nn.Sequential(
             nn.Linear(2 * config.hidden_size, config.hidden_size),
             nn.ReLU(),
-            nn.Dropout(p=self.DROPOUT_RATE),
+            nn.Dropout(p=dropout_rate),
             nn.Linear(config.hidden_size, self.N_LABELS)
         )
 
