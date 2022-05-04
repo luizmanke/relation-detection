@@ -105,6 +105,7 @@ class Model:
     def _train_setup(self, dataset: Any) -> None:
         self.results_: Dict[str, Any] = {"train": {}, "test": {}}
         self.data_ = dataset.get_data()
+        self.folds_ = np.empty(len(self.data_["samples"]))
         self.predictions_ = np.empty(len(self.data_["samples"]))
         self.predictions_proba_ = np.empty((len(self.data_["samples"]), 2))
 
@@ -125,6 +126,7 @@ class Model:
         self.results_["train"][fold]["time"] = elapsed_time
 
     def _test(self, indexes: np.ndarray, fold: int) -> None:
+        self.folds_[indexes] = fold
         samples_test, labels_test = self._select_samples(indexes)
 
         start_time = dt.now()
