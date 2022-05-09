@@ -26,17 +26,30 @@ if torch.cuda.device_count() > 0 and torch.cuda.is_available():
 
 class Graph(NLP):
 
-    BATCH_SIZE = 50
-    DECAY_MIN_EPOCHS = 5
-    DECAY_LEARNING_RATE = 0.98
-    GRADIENT_MAX_NORM = 5
-    LEARNING_RATE = 0.3
-    L2_REGULARIZATION = 0
-    N_EPOCHS = 100
-    POOLING_L2 = 0.003
-
-    def __init__(self):
+    def __init__(
+        self,
+        batch_size: int = 50,
+        decay_min_epochs: int = 5,
+        decay_learning_rate: float = 0.98,
+        gradient_max_norm: float = 5.0,
+        learning_rate: float = 0.3,
+        l2_regularization: float = 0,
+        l2_pooling: float = 0.003,
+        n_epochs: int = 100,
+        *args,
+        **kwargs
+    ):
         NLP.__init__(self)
+        self.batch_size_ = batch_size
+        self.decay_min_epochs_ = decay_min_epochs
+        self.decay_learning_rate_ = decay_learning_rate
+        self.gradient_max_norm_ = gradient_max_norm
+        self.learning_rate_ = learning_rate
+        self.l2_regularization_ = l2_regularization
+        self.l2_pooling_ = l2_pooling
+        self.n_epochs_ = n_epochs
+        self.args_ = args
+        self.kwargs_ = kwargs
 
     def fit(  # type: ignore[override]
         self,
@@ -52,7 +65,7 @@ class Graph(NLP):
         self._fit(data_loader)
 
     def _create_model(self) -> None:
-        self.model_ = BaseCNN(self.vectors_, self.maps_)
+        self.model_ = BaseCNN(self.vectors_, self.maps_, *self.args_, **self.kwargs_)
         self.model_.to(device=get_device())
 
     def _set_up_optimizers(self) -> None:
@@ -63,13 +76,13 @@ class Graph(NLP):
         parameters = [p for p in self.model_.parameters() if p.requires_grad]
         self._optimizer = torch.optim.SGD(
             parameters,
-            lr=self.LEARNING_RATE,
-            weight_decay=self.L2_REGULARIZATION
+            lr=self.learning_rate_,
+            weight_decay=self.l2_regularization_
         )
 
     def _fit(self, data_loader: DataLoader) -> None:
 
-        for epoch in range(self.N_EPOCHS):
+        for epoch in range(self.n_epochs_):
             for batch in data_loader:
 
                 # prepare model
@@ -82,16 +95,16 @@ class Graph(NLP):
 
                 # compute loss
                 loss = self._loss_function(outputs["logits"], inputs["labels"])
-                loss += self.POOLING_L2 * (outputs["pooling"] ** 2).sum(1).mean()
+                loss += self.l2_pooling_ * (outputs["pooling"] ** 2).sum(1).mean()
 
                 # optimize
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model_.parameters(), self.GRADIENT_MAX_NORM)
+                torch.nn.utils.clip_grad_norm_(self.model_.parameters(), self.gradient_max_norm_)
                 self._optimizer.step()
 
             # update learning rate
-            if epoch > self.DECAY_MIN_EPOCHS:
-                new_learning_rate = self.LEARNING_RATE * (self.DECAY_LEARNING_RATE ** epoch)
+            if epoch > self.decay_min_epochs_:
+                new_learning_rate = self.learning_rate_ * (self.decay_learning_rate_ ** epoch)
                 for param_group in self._optimizer.param_groups:
                     param_group["lr"] = new_learning_rate
 
@@ -133,7 +146,7 @@ class Graph(NLP):
                 sample["label"] = label
         return DataLoader(
             data,  # type: ignore
-            batch_size=self.BATCH_SIZE,
+            batch_size=self.batch_size_,
             shuffle=shuffle,
             collate_fn=self._collate_fn
         )
@@ -183,48 +196,65 @@ class Graph(NLP):
 
 class BaseCNN(nn.Module):
 
-    CLASSIFIER_HIDDEN_SIZE = 200
-    CLASSIFIER_N_CLASSES = 2
-    CNN_HIDDEN_SIZE = 200
-    CNN_N_LAYERS = 2
-    DROPOUT = 0.5
-    EMBEDDINGS_POS_SIZE = 30
-    EMBEDDINGS_NER_SIZE = 30
-    MLP_HIDDEN_SIZE = 200
-    MLP_N_LAYERS = 2
-    RNN_BIDIRECTIONAL = True
-    RNN_HIDDEN_SIZE = 200
-    RNN_N_LAYERS = 1
+    def __init__(
+        self,
+        embeddings: np.ndarray,
+        maps: dict,
+        classifier_hidden_size: int = 200,
+        classifier_n_classes: int = 2,
+        cnn_hidden_size: int = 200,
+        cnn_n_layers: int = 2,
+        dropout: float = 0.5,
+        embeddings_pos_size: int = 30,
+        embeddings_ner_size: int = 30,
+        mlp_hidden_size: int = 200,
+        mlp_n_layers: int = 2,
+        rnn_bidirectional: bool = True,
+        rnn_hidden_size: int = 200,
+        rnn_n_layers: int = 1
+    ) -> None:
 
-    def __init__(self, embeddings: np.ndarray, maps: dict) -> None:
         super().__init__()
+        self.classifier_hidden_size_ = classifier_hidden_size
+        self.classifier_n_classes_ = classifier_n_classes
+        self.cnn_hidden_size_ = cnn_hidden_size
+        self.cnn_n_layers_ = cnn_n_layers
+        self.dropout_ = dropout
+        self.embeddings_pos_size_ = embeddings_pos_size
+        self.embeddings_ner_size_ = embeddings_ner_size
+        self.mlp_hidden_size_ = mlp_hidden_size
+        self.mlp_n_layers_ = mlp_n_layers
+        self.rnn_bidirectional_ = rnn_bidirectional
+        self.rnn_hidden_size_ = rnn_hidden_size
+        self.rnn_n_layers_ = rnn_n_layers
+
         self._tree = Tree()
         self._embeddings = Embeddings(
             embeddings,
             maps,
-            self.EMBEDDINGS_POS_SIZE,
-            self.EMBEDDINGS_NER_SIZE,
-            self.DROPOUT
+            self.embeddings_pos_size_,
+            self.embeddings_ner_size_,
+            self.dropout_
         )
         self._rnn = RNN(
-            embeddings.shape[1] + self.EMBEDDINGS_POS_SIZE + self.EMBEDDINGS_NER_SIZE,
-            self.RNN_HIDDEN_SIZE,
-            self.RNN_N_LAYERS,
-            self.RNN_BIDIRECTIONAL,
-            self.DROPOUT
+            embeddings.shape[1] + self.embeddings_pos_size_ + self.embeddings_ner_size_,
+            self.rnn_hidden_size_,
+            self.rnn_n_layers_,
+            self.rnn_bidirectional_,
+            self.dropout_
         )
         self._cnn = CNN(
-            self.RNN_HIDDEN_SIZE * 2,
-            self.CNN_HIDDEN_SIZE,
-            self.CNN_N_LAYERS,
-            self.DROPOUT
+            self.rnn_hidden_size_ * 2,
+            self.cnn_hidden_size_,
+            self.cnn_n_layers_,
+            self.dropout_
         )
         self._mlp = MLP(
-            self.MLP_HIDDEN_SIZE * 3,
-            self.MLP_HIDDEN_SIZE,
-            self.MLP_N_LAYERS
+            self.mlp_hidden_size_ * 3,
+            self.mlp_hidden_size_,
+            self.mlp_n_layers_
         )
-        self._classifier = Classifier(self.CLASSIFIER_HIDDEN_SIZE, self.CLASSIFIER_N_CLASSES)
+        self._classifier = Classifier(self.classifier_hidden_size_, self.classifier_n_classes_)
 
     def forward(self, inputs: dict) -> dict:
         tree_outputs = self._tree.get_matrix(inputs)
