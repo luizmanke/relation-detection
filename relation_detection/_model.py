@@ -85,7 +85,7 @@ class Model:
         ax.set_ylabel("True label", fontsize=16, labelpad=16)
 
     def plot_kde(self) -> None:
-        _, ax = plt.subplots(figsize=(16, 6))
+        _, ax = plt.subplots(figsize=(12, 6))
         sns.kdeplot(
             data=pd.DataFrame({"label": self.data_["labels"], "proba": self.predictions_proba_[:, 1]}),
             x="proba",
