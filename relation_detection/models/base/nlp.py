@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import re
 import spacy
 from typing import Dict, List, Tuple
 
@@ -97,16 +98,20 @@ class NLP:
     @staticmethod
     def _find_name_indexes(name: str, doc) -> Tuple[int, int]:
 
-        name_stripped = name.strip()
-        text = doc.text
-        start_char = text.find(name_stripped)
-        end_char = start_char + len(name_stripped)
+        for match in re.finditer(re.escape(name.strip()), doc.text):
+            index_start, index_end = None, None
 
-        for token in doc:
-            if token.idx == start_char:
-                index_start = token.i
-            if token.idx + len(token) == end_char:
-                index_end = token.i
+            for token in doc:
+                if token.idx == match.start():
+                    index_start = token.i
+                if token.idx + len(token) == match.end():
+                    index_end = token.i
+
+            if index_start and index_end:
+                break
+
+        assert index_start is not None
+        assert index_end is not None
 
         return index_start, index_end
 
