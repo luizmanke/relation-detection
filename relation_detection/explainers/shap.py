@@ -13,11 +13,23 @@ class SHAP(BaseExplainer):
         self.nlp_ = spacy.load("pt_core_news_lg")
 
     def explain_sample(self, model: Any, sample: dict) -> None:
-        assert isinstance(sample, dict)
-        shap_values = self._explain_sample(model, sample)
+        shap_values = self._explain_sample(model, sample, replace_values=True)
         shap.plots.text(shap_values[0, :, 1])
 
-    def _explain_sample(self, model: Any, sample: dict) -> shap.Explanation:
+    def explain_model(self, model: Any, samples: List[dict]) -> None:
+        shap_values = self._loop_samples(model, samples)
+        shap.plots.bar(shap_values[:, :, 1], max_display=15)
+
+    def _loop_samples(self, model: Any, samples: List[dict]) -> shap.Explanation:
+        shap_values = [self._explain_sample(model, sample) for sample in samples]
+        return shap.Explanation(
+            np.array([x.values[0, :, :] for x in shap_values], dtype=object),
+            np.array([x.base_values[0, :] for x in shap_values], dtype=object),
+            np.array([x.data[0] for x in shap_values], dtype=object),
+            feature_names=[x.feature_names[0] for x in shap_values]
+        )
+
+    def _explain_sample(self, model: Any, sample: dict, replace_values=False) -> shap.Explanation:
         sentence = " ".join(sample["tokens"])
         sample_replaced = self._replace_entity_tokens(sample)
         sentence_replaced = self._get_sentence(sample_replaced)
@@ -34,7 +46,10 @@ class SHAP(BaseExplainer):
         masker = shap.maskers.Text(self._tokenize, mask_token=" MASK_TOKEN ", collapse_mask_token=False)
         explainer = shap.Explainer(_nested_predict, masker)
         shap_values = explainer([sentence], silent=True)
-        self._replace_values(shap_values, sample, index_1, index_2)
+
+        if replace_values:
+            self._replace_values(shap_values, sample, index_1, index_2)
+
         return shap_values
 
     @staticmethod
