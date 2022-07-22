@@ -1,5 +1,5 @@
 from typing import Any
-from .explainers.lime import LIME
+from .explainers.shap import SHAP
 
 
 class Explainer:
@@ -8,4 +8,4 @@ class Explainer:
         pass
 
     def explain_sample(self, model: Any, sample: dict) -> None:
-        LIME().explain_sample(model, sample)
+        SHAP().explain_sample(model, sample)
