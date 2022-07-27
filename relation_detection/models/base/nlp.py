@@ -7,10 +7,10 @@ from typing import Dict, List, Tuple
 
 class NLP:
 
-    PAD_TOKEN = "[PAD]"
-    UNKNOWN_TOKEN = "[UNKNOWN]"
-    E1_TOKEN = "[E1]"
-    E2_TOKEN = "[E2]"
+    PAD_TOKEN = "PAD"
+    UNKNOWN_TOKEN = "UNKNOWN"
+    E1_TOKEN = "ENTITY1"
+    E2_TOKEN = "ENTITY2"
 
     def __init__(self) -> None:
         self.nlp_ = spacy.load("pt_core_news_lg")

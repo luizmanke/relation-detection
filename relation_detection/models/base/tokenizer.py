@@ -1,12 +1,15 @@
 from transformers import AutoTokenizer
 from typing import List
 
+E1_TOKEN = "ENTITY1"  # nosec
+E2_TOKEN = "ENTITY2"  # nosec
+
 
 class BaseTokenizer:
 
     def __init__(self, transformer_name: str) -> None:
         self.tokenizer_ = AutoTokenizer.from_pretrained(transformer_name)
-        self.tokenizer_.add_tokens(["[E1]", "[E2]"])
+        self.tokenizer_.add_tokens([E1_TOKEN, E2_TOKEN])
         self.max_sequence_length_ = 512
 
     def transform(self, samples: List[dict], pad: bool = False) -> List[dict]:
@@ -26,10 +29,10 @@ class BaseTokenizer:
                 # add entity marker token
                 if i == sample["index_1"]:
                     new_index_1 = len(tokens) + EXTRA_CLS_TOKEN
-                    tokens.extend(["[E1]"])
+                    tokens.extend([E1_TOKEN])
                 elif i == sample["index_2"]:
                     new_index_2 = len(tokens) + EXTRA_CLS_TOKEN
-                    tokens.extend(["[E2]"])
+                    tokens.extend([E2_TOKEN])
                 else:
                     tokens.extend(tokens_wordpiece)
 
@@ -44,7 +47,7 @@ class BaseTokenizer:
             max_length = max([len(sample["tokens"]) for sample in samples_tokenized])
             for sample in samples_tokenized:
                 sample["tokens"] = (
-                    sample["tokens"] + ["[PAD]"] * (max_length - len(sample["tokens"])))
+                    sample["tokens"] + ["PAD"] * (max_length - len(sample["tokens"])))
 
         return samples_tokenized
 
