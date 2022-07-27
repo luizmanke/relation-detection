@@ -356,7 +356,7 @@ class RNN(nn.Module):
         h0 = c0 = Variable(torch.zeros(*state_shape), requires_grad=False).to(device)
 
         # rnn layers
-        lengths = list(inputs["masks"].data.eq(PAD_ID).long().sum(1).squeeze())
+        lengths = list(inputs["masks"].data.eq(PAD_ID).long().sum(1))
         padded_sequence = nn.utils.rnn.pack_padded_sequence(
             inputs["embeddings"],
             lengths,  # type: ignore
