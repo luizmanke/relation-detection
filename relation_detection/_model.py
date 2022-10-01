@@ -90,6 +90,7 @@ class Model:
             data=pd.DataFrame({"label": self.data_["labels"], "proba": self.predictions_proba_[:, 1]}),
             x="proba",
             hue="label",
+            palette=["blue", "red"],
             ax=ax
         )
         ax.set_xlabel("Probability", fontsize=16, labelpad=16)
